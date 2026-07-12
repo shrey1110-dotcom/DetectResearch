@@ -1,0 +1,231 @@
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String         @id @default(uuid())
+  email        String         @unique
+  passwordHash String         @map("password_hash")
+  name         String
+  role         Role           @default(STUDENT)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  
+  admin        Admin?
+  submitted    ResearchLink[] @relation("SubmittedLinks")
+  savedItems   SavedResearch[]
+  verifiedItems ResearchItem[] @relation("VerifiedItems")
+  drafts       OutreachDraft[]
+
+  @@map("users")
+}
+
+enum Role {
+  STUDENT
+  ADMIN
+}
+
+model Admin {
+  id        String   @id @default(uuid())
+  userId    String   @unique @map("user_id")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("admins")
+}
+
+model ResearchLink {
+  id            String         @id @default(uuid())
+  url           String         @unique
+  status        ProcessStatus  @default(PENDING)
+  addedByUserId String?        @map("added_by_user_id")
+  addedByUser   User?          @relation("SubmittedLinks", fields: [addedByUserId], references: [id], onDelete: SetNull)
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  errorMsg      String?        @map("error_msg")
+  
+  researchItem  ResearchItem?
+  logs          ExtractionLog[]
+
+  @@map("research_links")
+}
+
+enum ProcessStatus {
+  PENDING
+  PROCESSING
+  PROCESSED
+  FAILED
+}
+
+model ResearchItem {
+  id               String                 @id @default(uuid())
+  researchLinkId   String                 @unique @map("research_link_id")
+  researchLink     ResearchLink           @relation(fields: [researchLinkId], references: [id], onDelete: Cascade)
+  
+  title            String
+  summary          String
+  significance     String?                // why this research may matter
+  
+  universityId     String                 @map("university_id")
+  university       University             @relation(fields: [universityId], references: [id])
+  
+  departmentId     String?                @map("department_id")
+  department       Department?            @relation(fields: [departmentId], references: [id])
+  
+  professorId      String?                @map("professor_id")
+  professor        Professor?             @relation(fields: [professorId], references: [id])
+  
+  publicationDate  DateTime?              @map("publication_date")
+  sourceUrl        String                 @map("source_url")
+  sourceType       String                 @default("publication") @map("source_type") // e.g. publication, lab page, university news, professor page, grant
+  
+  confidenceScores Json                   @map("confidence_scores") // stores JSON scores
+  missingInfoFlags Json                   @map("missing_info_flags") // list of missing fields
+  
+  isVerified       Boolean                @default(false) @map("is_verified")
+  verifiedByUserId String?                @map("verified_by_user_id")
+  verifiedByUser   User?                  @relation("VerifiedItems", fields: [verifiedByUserId], references: [id])
+  
+  createdAt        DateTime               @default(now()) @map("created_at")
+  updatedAt        DateTime               @updatedAt @map("updated_at")
+  
+  // Relations
+  professors       ProfessorResearchLink[]
+  savedBy          SavedResearch[]
+  drafts           OutreachDraft[]
+  topics           ResearchItemTopic[]
+
+  @@map("research_items")
+}
+
+model Professor {
+  id                String                  @id @default(uuid())
+  name              String
+  title             String?                 // e.g. Associate Professor
+  universityId      String                  @map("university_id")
+  university        University              @relation(fields: [universityId], references: [id])
+  departmentId      String?                 @map("department_id")
+  department        Department?             @relation(fields: [departmentId], references: [id])
+  publicProfileUrl  String?                 @map("public_profile_url")
+  email             String?
+  createdAt         DateTime                @default(now()) @map("created_at")
+  updatedAt         DateTime                @updatedAt @map("updated_at")
+  
+  researchItems     ResearchItem[]
+  researchLinks     ProfessorResearchLink[]
+  drafts            OutreachDraft[]
+
+  @@map("professors")
+}
+
+model ProfessorResearchLink {
+  professorId    String       @map("professor_id")
+  professor      Professor    @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  researchItemId String       @map("research_item_id")
+  researchItem   ResearchItem @relation(fields: [researchItemId], references: [id], onDelete: Cascade)
+
+  @@id([professorId, researchItemId])
+  @@map("professor_research_links")
+}
+
+model University {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  domain    String?
+  createdAt DateTime     @default(now()) @map("created_at")
+  updatedAt DateTime     @updatedAt @map("updated_at")
+  
+  professors    Professor[]
+  departments   Department[]
+  researchItems ResearchItem[]
+
+  @@map("universities")
+}
+
+model Department {
+  id           String         @id @default(uuid())
+  name         String
+  universityId String         @map("university_id")
+  university   University     @relation(fields: [universityId], references: [id], onDelete: Cascade)
+  createdAt    DateTime       @default(now()) @map("created_at")
+  updatedAt    DateTime       @updatedAt @map("updated_at")
+  
+  professors    Professor[]
+  researchItems ResearchItem[]
+
+  @@unique([name, universityId])
+  @@map("departments")
+}
+
+model Topic {
+  id        String              @id @default(uuid())
+  name      String              @unique
+  createdAt DateTime            @default(now()) @map("created_at")
+  updatedAt DateTime            @updatedAt @map("updated_at")
+  
+  researchItems ResearchItemTopic[]
+
+  @@map("topics")
+}
+
+model ResearchItemTopic {
+  researchItemId String       @map("research_item_id")
+  researchItem   ResearchItem @relation(fields: [researchItemId], references: [id], onDelete: Cascade)
+  topicId        String       @map("topic_id")
+  topic          Topic        @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  @@id([researchItemId, topicId])
+  @@map("research_item_topics")
+}
+
+model SavedResearch {
+  id             String       @id @default(uuid())
+  userId         String       @map("user_id")
+  user           User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  researchItemId String       @map("research_item_id")
+  researchItem   ResearchItem @relation(fields: [researchItemId], references: [id], onDelete: Cascade)
+  createdAt      DateTime     @default(now()) @map("created_at")
+
+  @@unique([userId, researchItemId])
+  @@map("saved_research")
+}
+
+model OutreachDraft {
+  id               String       @id @default(uuid())
+  userId           String       @map("user_id")
+  user             User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  professorId      String       @map("professor_id")
+  professor        Professor    @relation(fields: [professorId], references: [id], onDelete: Cascade)
+  researchItemId   String       @map("research_item_id")
+  researchItem     ResearchItem @relation(fields: [researchItemId], references: [id], onDelete: Cascade)
+  
+  studentName      String       @map("student_name")
+  studentMajor     String       @map("student_major")
+  studentYear      String       @map("student_year")
+  studentInterests String       @map("student_interests")
+  studentSkills    String       @map("student_skills")
+  
+  emailSubject     String       @map("email_subject")
+  emailBody        String       @map("email_body")
+  createdAt        DateTime     @default(now()) @map("created_at")
+
+  @@map("outreach_drafts")
+}
+
+model ExtractionLog {
+  id             String       @id @default(uuid())
+  researchLinkId String       @map("research_link_id")
+  researchLink   ResearchLink @relation(fields: [researchLinkId], references: [id], onDelete: Cascade)
+  stepName       String       @map("step_name")
+  status         String       // INFO, SUCCESS, ERROR
+  message        String
+  timestamp      DateTime     @default(now())
+
+  @@map("extraction_logs")
+}
