@@ -6,14 +6,14 @@ export async function GET() {
   try {
     console.log('Executing programmatic schema push...');
     
-    // Call the local prisma binary directly to avoid npx writing to read-only home dir cache
-    const prismaBin = path.join(process.cwd(), 'node_modules', '.bin', 'prisma');
+    // Call the prisma CLI js file directly using node to ensure Vercel packages it
+    const prismaJs = path.join(process.cwd(), 'node_modules', 'prisma', 'build', 'index.js');
 
     // Run prisma db push to create tables on Supabase
-    const pushOutput = execSync(`"${prismaBin}" db push --accept-data-loss`, {
+    const pushOutput = execSync(`node "${prismaJs}" db push --accept-data-loss`, {
       env: { 
         ...process.env,
-        HOME: '/tmp' // Redirect home cache path to writable /tmp
+        HOME: '/tmp'
       },
       encoding: 'utf-8'
     });
@@ -21,7 +21,7 @@ export async function GET() {
     console.log('Database push success:', pushOutput);
     
     // Run prisma db seed to seed the 4 research items
-    const seedOutput = execSync(`"${prismaBin}" db seed`, {
+    const seedOutput = execSync(`node "${prismaJs}" db seed`, {
       env: { 
         ...process.env,
         HOME: '/tmp'
