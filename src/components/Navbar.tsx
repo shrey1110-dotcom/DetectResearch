@@ -58,7 +58,7 @@ export default function Navbar() {
           <BookOpen className="text-white w-5 h-5" />
         </div>
         <span className="font-bold text-lg tracking-tight text-zinc-850 dark:text-zinc-100">
-          Research<span className="text-indigo-500">Link</span>
+          Detect<span className="text-indigo-500">Research</span>
         </span>
       </Link>
 

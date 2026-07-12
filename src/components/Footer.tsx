@@ -12,7 +12,7 @@ export default function Footer() {
               <BookOpen className="text-white w-4.5 h-4.5" />
             </div>
             <span className="font-bold text-lg text-zinc-900 dark:text-zinc-100">
-              ResearchLink
+              Detect Research
             </span>
           </div>
           <p className="text-sm max-w-sm leading-relaxed text-zinc-505 dark:text-zinc-400">
@@ -46,7 +46,7 @@ export default function Footer() {
       </div>
 
       <div className="max-w-7xl mx-auto border-t border-zinc-200 dark:border-zinc-800 mt-8 pt-8 flex flex-col md:flex-row justify-between items-center gap-4 text-xs">
-        <p>&copy; {new Date().getFullYear()} ResearchLink. Built for undergraduate discovery.</p>
+        <p>&copy; {new Date().getFullYear()} Detect Research. Built for undergraduate discovery.</p>
         <div className="flex gap-6">
           <span className="hover:text-indigo-505 transition-colors cursor-pointer">Terms of Service</span>
           <span className="hover:text-indigo-505 transition-colors cursor-pointer">Privacy Policy</span>

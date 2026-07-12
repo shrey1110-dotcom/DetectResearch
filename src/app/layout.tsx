@@ -4,10 +4,10 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "ResearchLink | Discover Recent University Research & Connect with Professors",
+  title: "Detect Research | Discover Recent University Research & Connect with Professors",
   description: "Find undergraduate research opportunities. Explore research profiles from MIT, Stanford, Harvard, and more. Generate tailored outreach emails to contact professors.",
   keywords: "research, university, undergraduate research, professor, email outreach, science, engineering",
-  authors: [{ name: "ResearchLink Team" }],
+  authors: [{ name: "Detect Research Team" }],
 };
 
 export default function RootLayout({
