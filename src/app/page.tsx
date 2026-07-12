@@ -301,3 +301,5 @@ export default function LandingPage() {
 // Hero Font Style
 
 // Bento Redesign
+
+// Hero Font Style
