@@ -299,3 +299,5 @@ export default function LandingPage() {
 // Bento Redesign
 
 // Hero Font Style
+
+// Bento Redesign
