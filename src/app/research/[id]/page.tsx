@@ -433,3 +433,5 @@ export default function ResearchDetailPage() {
 // Metric visuals
 
 // Terminal backdrop
+
+// Metric visuals
