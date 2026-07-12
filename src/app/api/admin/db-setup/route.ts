@@ -1,27 +1,31 @@
 import { NextResponse } from 'next/server';
 import { execSync } from 'child_process';
+import path from 'path';
 
 export async function GET() {
   try {
     console.log('Executing programmatic schema push...');
     
-    // Run prisma generate first just in case
-    execSync('npx prisma generate', {
-      env: { ...process.env },
-      encoding: 'utf-8'
-    });
+    // Call the local prisma binary directly to avoid npx writing to read-only home dir cache
+    const prismaBin = path.join(process.cwd(), 'node_modules', '.bin', 'prisma');
 
     // Run prisma db push to create tables on Supabase
-    const pushOutput = execSync('npx prisma db push --accept-data-loss', {
-      env: { ...process.env },
+    const pushOutput = execSync(`"${prismaBin}" db push --accept-data-loss`, {
+      env: { 
+        ...process.env,
+        HOME: '/tmp' // Redirect home cache path to writable /tmp
+      },
       encoding: 'utf-8'
     });
     
     console.log('Database push success:', pushOutput);
     
     // Run prisma db seed to seed the 4 research items
-    const seedOutput = execSync('npx prisma db seed', {
-      env: { ...process.env },
+    const seedOutput = execSync(`"${prismaBin}" db seed`, {
+      env: { 
+        ...process.env,
+        HOME: '/tmp'
+      },
       encoding: 'utf-8'
     });
     
