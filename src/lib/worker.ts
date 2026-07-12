@@ -2,7 +2,7 @@ import prisma from './prisma';
 import { processLink } from './queue';
 
 async function runWorker() {
-  console.log('=== ResearchLink Queue Worker Started ===');
+  console.log('=== Detect Research Queue Worker Started ===');
   console.log('Polling database for PENDING links...');
 
   let running = true;

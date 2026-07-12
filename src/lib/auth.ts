@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import prisma from './prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'researchlink-super-secret-key-12345';
+const JWT_SECRET = process.env.JWT_SECRET || 'detectresearch-super-secret-key-12345';
 
 export function hashPassword(password: string): string {
   return bcrypt.hashSync(password, 10);

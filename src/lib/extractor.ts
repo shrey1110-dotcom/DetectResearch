@@ -120,7 +120,7 @@ export async function extractResearchLink(url: string): Promise<ExtractedResearc
   try {
     const res = await fetch(url, {
       headers: {
-        'User-Agent': 'ResearchLinkBot/1.0 (+http://localhost:3000/bot)'
+        'User-Agent': 'DetectResearchBot/1.0 (+https://detectresearch.com/bot)'
       },
       next: { revalidate: 3600 }
     });
