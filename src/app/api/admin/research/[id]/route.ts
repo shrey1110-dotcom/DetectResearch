@@ -24,7 +24,9 @@ export async function PUT(
       publicationDate,
       sourceType,
       topics,
-      isVerified
+      isVerified,
+      activityStatus,
+      activityEvidence
     } = body;
 
     const item = await prisma.researchItem.findUnique({
@@ -159,6 +161,9 @@ export async function PUT(
         sourceType: sourceType !== undefined ? sourceType : item.sourceType,
         isVerified: isVerified !== undefined ? isVerified : item.isVerified,
         verifiedByUserId: isVerified ? admin.id : null,
+        activityStatus: activityStatus !== undefined ? activityStatus : item.activityStatus,
+        activityEvidence: activityEvidence !== undefined ? activityEvidence : item.activityEvidence,
+        lastVerified: isVerified ? new Date() : item.lastVerified,
         updatedAt: new Date()
       },
       include: {
