@@ -11,7 +11,7 @@ export default function AdminDashboard() {
   const router = useRouter();
 
   // Tab state: 'queue' or 'items'
-  const [activeTab, setActiveTab] = useState<'queue' | 'items'>('queue');
+  const [activeTab, setActiveTab] = useState<'queue' | 'items' | 'finder'>('queue');
   
   // Data states
   const [links, setLinks] = useState<any[]>([]);
@@ -23,6 +23,13 @@ export default function AdminDashboard() {
   const [newUrl, setNewUrl] = useState('');
   const [submittingLink, setSubmittingLink] = useState(false);
   const [submitError, setSubmitError] = useState('');
+
+  // Active Research Finder Form state
+  const [finderUni, setFinderUni] = useState('');
+  const [finderTopic, setFinderTopic] = useState('');
+  const [finderLoading, setFinderLoading] = useState(false);
+  const [finderResults, setFinderResults] = useState<any[]>([]);
+  const [finderError, setFinderError] = useState('');
 
   // Edit Modal states
   const [editingItem, setEditingItem] = useState<any>(null);
@@ -39,6 +46,8 @@ export default function AdminDashboard() {
   const [editSourceType, setEditSourceType] = useState('publication');
   const [editTopicsString, setEditTopicsString] = useState('');
   const [editIsVerified, setEditIsVerified] = useState(false);
+  const [editActivityStatus, setEditActivityStatus] = useState('ACTIVE');
+  const [editActivityEvidence, setEditActivityEvidence] = useState('');
   const [savingEdit, setSavingEdit] = useState(false);
 
   // Search items in database
@@ -107,6 +116,50 @@ export default function AdminDashboard() {
       setSubmitError(err?.message || 'Error enqueuing link');
     } finally {
       setSubmittingLink(false);
+    }
+  };
+
+  // Handle active research search
+  const handleFinderSearch = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!finderUni.trim()) return;
+    setFinderLoading(true);
+    setFinderError('');
+    setFinderResults([]);
+    try {
+      const res = await fetch(`/api/admin/find-active-web?university=${encodeURIComponent(finderUni)}&topic=${encodeURIComponent(finderTopic)}`);
+      if (!res.ok) {
+        throw new Error('Finder API query failed');
+      }
+      const data = await res.json();
+      setFinderResults(data.results || []);
+    } catch (err: any) {
+      setFinderError(err?.message || 'Error searching web resources');
+    } finally {
+      setFinderLoading(false);
+    }
+  };
+
+  // Enqueue URL from finder search results
+  const handleEnqueueFromFinder = async (url: string) => {
+    try {
+      const res = await fetch('/api/admin/process', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url })
+      });
+      if (!res.ok) {
+        const json = await res.json();
+        throw new Error(json.error || 'Failed to submit URL');
+      }
+      alert('URL enqueued successfully! Go to the Links Queue tab to monitor progress.');
+      
+      // Update queue list
+      const queueRes = await fetch('/api/admin/process');
+      const queueData = await queueRes.json();
+      setLinks(queueData.links || []);
+    } catch (err: any) {
+      alert(err?.message || 'Error enqueuing URL');
     }
   };
 
@@ -185,6 +238,8 @@ export default function AdminDashboard() {
     setEditTopicsString(topicNames);
     
     setEditIsVerified(item.isVerified);
+    setEditActivityStatus(item.activityStatus || 'ACTIVE');
+    setEditActivityEvidence(item.activityEvidence || '');
   };
 
   // Save changes from Edit Modal
@@ -215,7 +270,9 @@ export default function AdminDashboard() {
           publicationDate: editPubDate || null,
           sourceType: editSourceType,
           topics: parsedTopics,
-          isVerified: editIsVerified
+          isVerified: editIsVerified,
+          activityStatus: editActivityStatus,
+          activityEvidence: editActivityEvidence
         })
       });
 
@@ -320,6 +377,17 @@ export default function AdminDashboard() {
         >
           <Database className="w-4 h-4" />
           Database Index ({items.length})
+        </button>
+        <button
+          onClick={() => setActiveTab('finder')}
+          className={`px-5 py-2.5 rounded-xl text-xs font-extrabold uppercase tracking-widest transition-all cursor-pointer flex items-center gap-2 ${
+            activeTab === 'finder'
+              ? 'bg-zinc-800 text-white dark:bg-indigo-600'
+              : 'border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-50 dark:hover:bg-zinc-900/30'
+          }`}
+        >
+          <Search className="w-4 h-4" />
+          Web Finder
         </button>
       </div>
 
@@ -582,6 +650,136 @@ export default function AdminDashboard() {
         </div>
       )}
 
+      {/* Tab Panel 3: Active Research Web Finder */}
+      {activeTab === 'finder' && (
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 animate-fade-in">
+          
+          {/* Query Form */}
+          <div className="col-span-1">
+            <div className="card-surface p-6 flex flex-col gap-5 sticky top-28">
+              <div>
+                <h3 className="font-bold text-zinc-805 dark:text-zinc-100 text-base flex items-center gap-1.5">
+                  <Search className="w-5 h-5 text-indigo-500" />
+                  Find Active Research
+                </h3>
+                <p className="text-[10px] text-zinc-400 dark:text-zinc-500 mt-0.5 leading-normal font-medium">
+                  Search faculty, labs, and research portals at any school. Prioritizes student opportunity indicators and ongoing grants.
+                </p>
+              </div>
+
+              {finderError && (
+                <div className="p-3.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-600 text-xs flex gap-2 items-start">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>{finderError}</span>
+                </div>
+              )}
+
+              <form onSubmit={handleFinderSearch} className="flex flex-col gap-4 font-semibold text-xs text-zinc-700">
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest pl-0.5">
+                    University / School Name
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={finderUni}
+                    onChange={(e) => setFinderUni(e.target.value)}
+                    placeholder="e.g. Stanford University or MIT"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/60 text-xs font-semibold focus:ring-1 focus:ring-indigo-500 focus:outline-none text-zinc-800 dark:text-zinc-100"
+                  />
+                </div>
+
+                <div className="flex flex-col gap-1">
+                  <label className="text-[9px] font-bold text-zinc-400 uppercase tracking-widest pl-0.5">
+                    Department / Topic Area
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={finderTopic}
+                    onChange={(e) => setFinderTopic(e.target.value)}
+                    placeholder="e.g. Bioelectronics or Computer Science"
+                    className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900/60 text-xs font-semibold focus:ring-1 focus:ring-indigo-500 focus:outline-none text-zinc-800 dark:text-zinc-100"
+                  />
+                </div>
+
+                <button
+                  type="submit"
+                  disabled={finderLoading}
+                  className="w-full py-3 rounded-xl bg-zinc-900 dark:bg-indigo-650 hover:bg-zinc-800 dark:hover:bg-indigo-600 text-white font-bold text-xs shadow-md flex items-center justify-center gap-1.5 transition-all cursor-pointer disabled:opacity-50"
+                >
+                  {finderLoading ? <Loader className="w-4 h-4 animate-spin" /> : <Search className="w-4 h-4" />}
+                  Find Opportunities
+                </button>
+              </form>
+            </div>
+          </div>
+
+          {/* Results Table list */}
+          <div className="lg:col-span-2 flex flex-col gap-6">
+            <div className="card-surface p-6 overflow-hidden">
+              <h3 className="font-bold text-zinc-800 dark:text-zinc-100 text-sm uppercase tracking-wider mb-4 border-b border-zinc-105 dark:border-zinc-800 pb-3">
+                Identified Research Web Portals ({finderResults.length})
+              </h3>
+
+              {finderResults.length === 0 ? (
+                <div className="text-center py-12 flex flex-col items-center gap-2">
+                  <Search className="w-8 h-8 text-zinc-350" />
+                  <p className="text-xs text-zinc-400 font-semibold">Enter details on the left to locate active web sources.</p>
+                </div>
+              ) : (
+                <div className="flex flex-col gap-4 max-h-[70vh] overflow-y-auto pr-1">
+                  {finderResults.map((result, idx) => (
+                    <div key={idx} className="p-5 rounded-2xl border border-zinc-200 dark:border-zinc-800 flex flex-col gap-3 relative bg-zinc-50/20 dark:bg-zinc-900/25">
+                      
+                      {/* Top Row */}
+                      <div className="flex justify-between items-start gap-4">
+                        <div className="flex flex-col gap-0.5 max-w-[70%]">
+                          <span className={`px-2.5 py-0.5 rounded border text-[8.5px] font-black uppercase tracking-wider self-start mb-1.5 ${
+                            result.likelihood.includes('High') 
+                              ? 'bg-emerald-50 text-emerald-600 border-emerald-200/20 dark:bg-emerald-950/20 dark:text-emerald-400' 
+                              : 'bg-zinc-100 text-zinc-500 border-zinc-200'
+                          }`}>
+                            {result.likelihood}
+                          </span>
+                          <a 
+                            href={result.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="text-xs font-bold text-zinc-705 dark:text-zinc-200 hover:text-indigo-500 hover:underline break-all"
+                          >
+                            {result.title}
+                          </a>
+                        </div>
+
+                        <button
+                          onClick={() => handleEnqueueFromFinder(result.url)}
+                          className="px-3 py-1.5 rounded-xl bg-zinc-900 dark:bg-indigo-600 hover:bg-zinc-800 dark:hover:bg-indigo-500 text-white text-[10px] font-bold shrink-0 cursor-pointer flex items-center gap-1 transition-all"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          Extract Opportunities
+                        </button>
+                      </div>
+
+                      {/* Snippet / Description */}
+                      <p className="text-xs text-zinc-500 dark:text-zinc-400 leading-normal font-normal">
+                        {result.snippet}
+                      </p>
+
+                      <div className="text-[9px] text-zinc-400 font-semibold break-all">
+                        {result.url}
+                      </div>
+
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+
+        </div>
+      )}
+
       {/* Edit Item Modal */}
       {editingItem && (
         <div className="fixed inset-0 z-50 bg-zinc-900/40 backdrop-blur-md flex items-center justify-center p-6">
@@ -717,6 +915,31 @@ export default function AdminDashboard() {
                   <option value="professor page">Professor Page</option>
                   <option value="grant">Grant</option>
                 </select>
+              </div>
+
+              <div className="flex flex-col gap-1">
+                <span className="text-[9px] text-zinc-455 dark:text-zinc-500 uppercase tracking-widest pl-0.5">Activity Status</span>
+                <select
+                  value={editActivityStatus}
+                  onChange={(e) => setEditActivityStatus(e.target.value)}
+                  className="px-3 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900"
+                >
+                  <option value="ACTIVE">Active (Ongoing research / recruitment)</option>
+                  <option value="POSSIBLY_ACTIVE">Likely Active (Active lab / project)</option>
+                  <option value="ARCHIVED">Archived / Past Research</option>
+                  <option value="UNKNOWN">Unknown Status</option>
+                </select>
+              </div>
+
+              <div className="flex flex-col gap-1 sm:col-span-2">
+                <span className="text-[9px] text-zinc-450 dark:text-zinc-550 uppercase tracking-widest pl-0.5">Activity Evidence Indicator</span>
+                <input
+                  type="text"
+                  value={editActivityEvidence}
+                  onChange={(e) => setEditActivityEvidence(e.target.value)}
+                  placeholder="e.g. Page says hiring undergraduates; Active grant dates run 2025-2028"
+                  className="w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 dark:bg-zinc-900 focus:ring-1 focus:ring-indigo-500"
+                />
               </div>
 
               <div className="flex flex-col gap-1 sm:col-span-2">
