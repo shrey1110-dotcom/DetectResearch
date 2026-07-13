@@ -92,6 +92,10 @@ model ResearchItem {
   verifiedByUserId String?                @map("verified_by_user_id")
   verifiedByUser   User?                  @relation("VerifiedItems", fields: [verifiedByUserId], references: [id])
   
+  activityStatus   String                 @default("ACTIVE") @map("activity_status") // e.g. ACTIVE, POSSIBLY_ACTIVE, ARCHIVED, UNKNOWN
+  activityEvidence String?                @map("activity_evidence")
+  lastVerified     DateTime               @default(now()) @map("last_verified")
+  
   createdAt        DateTime               @default(now()) @map("created_at")
   updatedAt        DateTime               @updatedAt @map("updated_at")
   
