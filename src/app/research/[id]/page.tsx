@@ -139,7 +139,7 @@ export default function ResearchDetailPage() {
             
             {/* Header tags */}
             <div className="flex flex-col gap-1.5">
-              <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest">
+              <div className="flex flex-wrap items-center gap-2.5 text-[10px] font-bold text-zinc-400 dark:text-zinc-555 uppercase tracking-widest">
                 <span className="flex items-center gap-1 text-indigo-500 dark:text-indigo-400">
                   <MapPin className="w-3.5 h-3.5" />
                   {item.university.name}
@@ -158,21 +158,49 @@ export default function ResearchDetailPage() {
                 {item.title}
               </h1>
 
-              {/* Verification Info Alert Banner */}
-              <div className="mt-2.5">
+              {/* Status and Verification Info Alert Banners */}
+              <div className="mt-2.5 flex flex-wrap gap-2 items-center">
+                {item.activityStatus === 'ACTIVE' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50 text-emerald-600 border border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30 text-[9px] font-black uppercase tracking-widest">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    Active Research Group
+                  </div>
+                )}
+                {item.activityStatus === 'POSSIBLY_ACTIVE' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-indigo-50 text-indigo-600 border border-indigo-250 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/30 text-[9px] font-black uppercase tracking-widest">
+                    <span className="w-1.5 h-1.5 rounded-full bg-indigo-500"></span>
+                    Likely Active Lab
+                  </div>
+                )}
+                {item.activityStatus === 'ARCHIVED' && (
+                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-zinc-100 text-zinc-500 border border-zinc-250 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700/50 text-[9px] font-bold uppercase tracking-widest">
+                    Archived / Past Project
+                  </div>
+                )}
                 {item.isVerified ? (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-50/50 border border-emerald-200 text-emerald-600 dark:bg-emerald-950/20 dark:text-emerald-400 text-[9px] font-bold uppercase tracking-widest">
                     <CheckCircle2 className="w-3.5 h-3.5" />
-                    Verified Public Record
+                    Admin Verified
                   </div>
                 ) : (
                   <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50/50 border border-amber-200 text-amber-600 dark:bg-amber-950/20 dark:text-amber-400 text-[9px] font-bold uppercase tracking-widest">
                     <Info className="w-3.5 h-3.5" />
-                    Pending Admin Verification
+                    Needs Verification
                   </div>
                 )}
               </div>
             </div>
+
+            {/* Activity Evidence Callout Banner */}
+            {item.activityEvidence && (
+              <div className="bg-emerald-500/5 dark:bg-emerald-955/10 border border-emerald-500/10 dark:border-emerald-900/20 rounded-2xl p-5 flex flex-col gap-1 text-xs">
+                <span className="font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-widest text-[9.5px]">Activity Evidence Indicator</span>
+                <p className="text-zinc-600 dark:text-zinc-350 mt-1 flex items-start gap-2">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse mt-1 shrink-0"></span>
+                  <span>{item.activityEvidence}</span>
+                </p>
+              </div>
+            )}
 
             {/* Student Summary */}
             <div className="flex flex-col gap-3 border-t border-zinc-100 dark:border-zinc-800 pt-6">
