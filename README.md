@@ -83,3 +83,4 @@ You can log in and test page functionalities using these preconfigured accounts:
 # ResearchLink - Active Research Opportunities Index
 An intelligent index platform designed to help undergraduate students discover active research labs and professors.
 ## Production Server Setup
+Running on https://detectresearch.com
