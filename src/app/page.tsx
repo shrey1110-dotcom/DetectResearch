@@ -44,14 +44,14 @@ export default function LandingPage() {
         <div className="max-w-4xl mx-auto text-center">
           {/* Headline */}
           <h1 className="text-5xl sm:text-6xl md:text-[80px] font-bold tracking-tight leading-[1.05] text-zinc-900 dark:text-white">
-            Find research.
+            Find active research.
             <br />
-            <span className="text-accent-gradient">Reach professors.</span>
+            <span className="text-accent-gradient">Reach ongoing labs.</span>
           </h1>
 
           {/* Subheadline */}
           <p className="mt-6 text-lg md:text-xl text-zinc-500 dark:text-zinc-400 max-w-2xl mx-auto leading-relaxed font-normal">
-            Browse university research, read simplified summaries, and draft outreach emails to connect with labs — all from public sources.
+            Discover active research groups, explore current ongoing projects, and compose outreach emails to connect with professors — all verified by administrators.
           </p>
 
           {/* Search Bar - Clean, single-line like Vercel */}
