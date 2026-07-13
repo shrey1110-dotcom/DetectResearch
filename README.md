@@ -85,3 +85,4 @@ An intelligent index platform designed to help undergraduate students discover a
 ## Production Server Setup
 Running on https://detectresearch.com
 ## Database Scaling Strategy
+Using paginated Postgres queries to handle scaling to 100,000+ entries seamlessly.
