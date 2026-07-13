@@ -274,8 +274,8 @@ ${studentName || '[Student Name]'}`;
           </div>
 
           <div className="flex flex-col gap-4">
-            <h3 className="font-bold text-zinc-805 dark:text-zinc-200 text-xs uppercase tracking-wider pl-1">
-              Indexed Publications ({researchItems.length})
+            <h3 className="font-bold text-zinc-855 dark:text-zinc-200 text-xs uppercase tracking-wider pl-1">
+              Active Labs & Projects ({researchItems.length})
             </h3>
             <div className="flex flex-col gap-3">
               {researchItems.map((item) => (
@@ -289,9 +289,14 @@ ${studentName || '[Student Name]'}`;
                   }`}
                 >
                   <div className="flex justify-between items-start gap-2">
-                    <span className="text-[9px] font-bold text-indigo-500 uppercase">{item.topic}</span>
-                    <span className="text-[8px] text-zinc-400 font-bold">
-                      {item.publicationDate ? new Date(item.publicationDate).toLocaleDateString('en-US', { year: 'numeric' }) : 'Recent'}
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-[9px] font-bold text-indigo-500 uppercase">{item.topic}</span>
+                      {item.activityStatus === 'ACTIVE' && (
+                        <span className="text-[8px] font-extrabold text-emerald-600 bg-emerald-50 px-1 py-0.2 rounded uppercase dark:bg-emerald-950/20 dark:text-emerald-400">Active</span>
+                      )}
+                    </div>
+                    <span className="text-[8.5px] text-zinc-400 font-bold">
+                      {item.activityStatus === 'ACTIVE' ? 'Active opportunity' : 'Recent project'}
                     </span>
                   </div>
                   <h4 className="font-bold text-xs text-zinc-800 dark:text-zinc-200 leading-snug">
