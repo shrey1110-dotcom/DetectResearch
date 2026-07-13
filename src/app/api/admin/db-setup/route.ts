@@ -7,6 +7,16 @@ export async function GET() {
   const results: string[] = [];
 
   try {
+    // Ensure active research columns exist in Postgres (Safe migration for existing DB)
+    const researchItemTableExists = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
+      `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'research_items')`
+    );
+    if (researchItemTableExists[0]?.exists) {
+      await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "activity_status" TEXT NOT NULL DEFAULT 'ACTIVE'`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "activity_evidence" TEXT`);
+      await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "last_verified" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+    }
+
     // Step 1: Check if tables already exist
     const tableCheck = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
       `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'universities')`
@@ -38,7 +48,7 @@ export async function GET() {
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "universities" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "domain" TEXT, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP(3) NOT NULL, CONSTRAINT "universities_pkey" PRIMARY KEY ("id"))`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "departments" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "university_id" TEXT NOT NULL, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP(3) NOT NULL, CONSTRAINT "departments_pkey" PRIMARY KEY ("id"))`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "professors" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "title" TEXT, "university_id" TEXT NOT NULL, "department_id" TEXT, "public_profile_url" TEXT, "email" TEXT, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP(3) NOT NULL, CONSTRAINT "professors_pkey" PRIMARY KEY ("id"))`);
-      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "research_items" ("id" TEXT NOT NULL, "research_link_id" TEXT NOT NULL, "title" TEXT NOT NULL, "summary" TEXT NOT NULL, "significance" TEXT, "university_id" TEXT NOT NULL, "department_id" TEXT, "professor_id" TEXT, "publication_date" TIMESTAMP(3), "source_url" TEXT NOT NULL, "source_type" TEXT NOT NULL DEFAULT 'publication', "confidence_scores" JSONB NOT NULL, "missing_info_flags" JSONB NOT NULL, "is_verified" BOOLEAN NOT NULL DEFAULT false, "verified_by_user_id" TEXT, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP(3) NOT NULL, CONSTRAINT "research_items_pkey" PRIMARY KEY ("id"))`);
+      await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "research_items" ("id" TEXT NOT NULL, "research_link_id" TEXT NOT NULL, "title" TEXT NOT NULL, "summary" TEXT NOT NULL, "significance" TEXT, "university_id" TEXT NOT NULL, "department_id" TEXT, "professor_id" TEXT, "publication_date" TIMESTAMP(3), "source_url" TEXT NOT NULL, "source_type" TEXT NOT NULL DEFAULT 'publication', "confidence_scores" JSONB NOT NULL, "missing_info_flags" JSONB NOT NULL, "is_verified" BOOLEAN NOT NULL DEFAULT false, "verified_by_user_id" TEXT, "activity_status" TEXT NOT NULL DEFAULT 'ACTIVE', "activity_evidence" TEXT, "last_verified" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP(3) NOT NULL, CONSTRAINT "research_items_pkey" PRIMARY KEY ("id"))`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "professor_research_links" ("professor_id" TEXT NOT NULL, "research_item_id" TEXT NOT NULL, CONSTRAINT "professor_research_links_pkey" PRIMARY KEY ("professor_id","research_item_id"))`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "topics" ("id" TEXT NOT NULL, "name" TEXT NOT NULL, "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP, "updated_at" TIMESTAMP(3) NOT NULL, CONSTRAINT "topics_pkey" PRIMARY KEY ("id"))`);
       await prisma.$executeRawUnsafe(`CREATE TABLE IF NOT EXISTS "research_item_topics" ("research_item_id" TEXT NOT NULL, "topic_id" TEXT NOT NULL, CONSTRAINT "research_item_topics_pkey" PRIMARY KEY ("research_item_id","topic_id"))`);
