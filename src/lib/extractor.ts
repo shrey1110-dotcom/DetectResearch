@@ -16,6 +16,8 @@ export interface ExtractedResearch {
   sourceType: string; // publication, lab page, university news, professor page, grant
   professorProfileUrl?: string;
   email?: string;
+  activityStatus?: string; // ACTIVE, POSSIBLY_ACTIVE, ARCHIVED, UNKNOWN
+  activityEvidence?: string;
   confidenceScores: {
     title: number;
     professor: number;
@@ -44,6 +46,8 @@ const MOCK_PROFILES: Record<string, Partial<ExtractedResearch>> = {
     sourceType: 'university news',
     professorProfileUrl: 'https://dmse.mit.edu/people/evelyn-chen',
     email: 'echen@mit.edu',
+    activityStatus: 'ACTIVE',
+    activityEvidence: 'MIT news page states ongoing project running through 25-28 cycle.',
     confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
     missingInfoFlags: []
   },
@@ -62,6 +66,8 @@ const MOCK_PROFILES: Record<string, Partial<ExtractedResearch>> = {
     sourceType: 'lab page',
     professorProfileUrl: 'https://chemeng.stanford.edu/people/zhenan-bao',
     email: 'zbao@stanford.edu',
+    activityStatus: 'ACTIVE',
+    activityEvidence: 'Lab website lists current research options and active student recruitment fields.',
     confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
     missingInfoFlags: []
   },
@@ -80,6 +86,8 @@ const MOCK_PROFILES: Record<string, Partial<ExtractedResearch>> = {
     sourceType: 'publication',
     professorProfileUrl: 'https://chemistry.harvard.edu/people/david-liu',
     email: 'drliu@harvard.edu',
+    activityStatus: 'POSSIBLY_ACTIVE',
+    activityEvidence: 'Published article linked to active epigenomics lab portfolio.',
     confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
     missingInfoFlags: []
   },
@@ -98,6 +106,8 @@ const MOCK_PROFILES: Record<string, Partial<ExtractedResearch>> = {
     sourceType: 'grant',
     professorProfileUrl: 'https://eecs.berkeley.edu/people/claire-tomlin',
     email: 'tomlin@berkeley.edu',
+    activityStatus: 'ACTIVE',
+    activityEvidence: 'NSF grant awards active through 2028 with student researcher allocations.',
     confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
     missingInfoFlags: []
   }
@@ -183,6 +193,8 @@ async function extractWithGemini(html: string, url: string): Promise<ExtractedRe
       "sourceType": "One of: publication, lab page, university news, professor page, grant",
       "professorProfileUrl": "Link to the professor's personal profile or academic page if found in text",
       "email": "Public contact email address of the researcher",
+      "activityStatus": "ACTIVE, POSSIBLY_ACTIVE, ARCHIVED, or UNKNOWN. Status is ACTIVE if text mentions ongoing research, active grants, student researcher opportunities, hiring, or open lab positions.",
+      "activityEvidence": "Explicit evidence text or explanation of why the status was chosen (e.g. 'Lab page mentions open positions for undergrads', 'Active grant dates run 2025-2028', 'Profile lists current research projects')",
       "confidenceScores": {
         "title": 0.0 to 1.0 score,
         "professor": 0.0 to 1.0 score,
@@ -224,6 +236,8 @@ async function extractWithGemini(html: string, url: string): Promise<ExtractedRe
       sourceType: data.sourceType || estimateSourceType(url),
       professorProfileUrl: data.professorProfileUrl || undefined,
       email: data.email || undefined,
+      activityStatus: data.activityStatus || 'POSSIBLY_ACTIVE',
+      activityEvidence: data.activityEvidence || 'Page analyzed for active research indicators.',
       confidenceScores: {
         title: data.confidenceScores?.title ?? 0.8,
         professor: data.confidenceScores?.professor ?? 0.8,
@@ -327,6 +341,39 @@ function extractWithHeuristics(html: string, url: string): ExtractedResearch {
     matchedTopics.push('Research');
   }
 
+  // Calculate Activity Status and Evidence heuristics
+  let activityStatus = 'POSSIBLY_ACTIVE';
+  let activityEvidence = 'Page analyzed for active research indicators.';
+  const textLower2 = bodyText.toLowerCase();
+
+  if (
+    textLower2.includes('join our lab') || 
+    textLower2.includes('student researchers') || 
+    textLower2.includes('open positions') || 
+    textLower2.includes('openings') || 
+    textLower2.includes('undergraduate research') || 
+    textLower2.includes('join the lab') ||
+    textLower2.includes('hiring')
+  ) {
+    activityStatus = 'ACTIVE';
+    activityEvidence = 'Page mentions student openings / lab researcher involvement opportunities.';
+  } else if (
+    textLower2.includes('current research') || 
+    textLower2.includes('ongoing projects') || 
+    textLower2.includes('current projects') ||
+    textLower2.includes('active research')
+  ) {
+    activityStatus = 'ACTIVE';
+    activityEvidence = 'Page lists ongoing or current active research projects.';
+  } else if (
+    textLower2.includes('past research') || 
+    textLower2.includes('archived') || 
+    textLower2.includes('completed projects')
+  ) {
+    activityStatus = 'ARCHIVED';
+    activityEvidence = 'Page lists past or completed research details.';
+  }
+
   // Calculate Confidence Scores
   const confidenceScores = {
     title: title !== 'Untitled Research' ? 0.85 : 0.2,
@@ -355,6 +402,8 @@ function extractWithHeuristics(html: string, url: string): ExtractedResearch {
     sourceType: estimateSourceType(url),
     email,
     publicationDate,
+    activityStatus,
+    activityEvidence,
     confidenceScores,
     missingInfoFlags
   };
@@ -397,6 +446,14 @@ function generateFallbackExtractorResult(url: string): ExtractedResearch {
     professorName = rawName.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
   }
 
+  let activityStatus = 'POSSIBLY_ACTIVE';
+  let activityEvidence = 'Analyzed URL path keywords for active research signals.';
+
+  if (urlLower.includes('grant') || urlLower.includes('project') || urlLower.includes('active') || urlLower.includes('opportunity')) {
+    activityStatus = 'ACTIVE';
+    activityEvidence = 'URL keyword indicators suggest active or ongoing project records.';
+  }
+
   return {
     title,
     professorName,
@@ -409,6 +466,8 @@ function generateFallbackExtractorResult(url: string): ExtractedResearch {
     sourceType: estimateSourceType(url),
     email,
     publicationDate: new Date(),
+    activityStatus,
+    activityEvidence,
     confidenceScores: {
       title: 0.5,
       professor: professorName !== 'Unknown Researcher' ? 0.6 : 0.1,
