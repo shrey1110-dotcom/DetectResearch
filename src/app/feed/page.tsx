@@ -21,6 +21,11 @@ function FeedContent() {
   });
   const [loading, setLoading] = useState(true);
 
+  // Pagination states
+  const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   // Filter bindings (synced with URL searchParams)
   const [search, setSearch] = useState(searchParams.get('search') || '');
   const [universityId, setUniversityId] = useState(searchParams.get('universityId') || '');
@@ -44,12 +49,16 @@ function FeedContent() {
       if (sourceType) params.set('sourceType', sourceType);
       if (dateStart) params.set('dateStart', dateStart);
       if (dateEnd) params.set('dateEnd', dateEnd);
+      params.set('page', page.toString());
+      params.set('limit', '20');
 
       const res = await fetch(`/api/research?${params.toString()}`);
       if (res.ok) {
         const data = await res.json();
         setItems(data.items);
         setFilters(data.filters);
+        setTotalPages(data.pagination.totalPages || 1);
+        setTotalCount(data.pagination.totalCount || 0);
       }
     } catch (err) {
       console.error('Failed to load feed items:', err);
@@ -81,9 +90,17 @@ function FeedContent() {
     if (sourceType) params.set('sourceType', sourceType);
     if (dateStart) params.set('dateStart', dateStart);
     if (dateEnd) params.set('dateEnd', dateEnd);
+    params.set('page', '1'); // Always reset to page 1
     
     router.push(`/feed?${params.toString()}`);
     setShowMobileFilters(false);
+  };
+
+  const changePage = (newPage: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('page', newPage.toString());
+    router.push(`/feed?${params.toString()}`);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const clearFilters = () => {
@@ -374,109 +391,178 @@ function FeedContent() {
               </button>
             </div>
           ) : (
-            items.map((item) => (
-              <div 
-                key={item.id} 
-                className="card-surface p-6 hover-lift flex flex-col gap-4 relative overflow-hidden"
-              >
-                {item.isVerified && (
-                  <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
-                )}
+            items.map((item) => {
+              const getStatusBadge = (status: string) => {
+                const s = (status || 'ACTIVE').toUpperCase();
+                if (s === 'ACTIVE') {
+                  return (
+                    <span className="px-2 py-0.5 rounded border text-[8.5px] font-black uppercase tracking-wider bg-emerald-50 text-emerald-600 border-emerald-250 dark:bg-emerald-950/20 dark:text-emerald-400 dark:border-emerald-900/30">
+                      Active
+                    </span>
+                  );
+                }
+                if (s === 'POSSIBLY_ACTIVE') {
+                  return (
+                    <span className="px-2 py-0.5 rounded border text-[8.5px] font-black uppercase tracking-wider bg-indigo-50 text-indigo-600 border-indigo-250 dark:bg-indigo-950/20 dark:text-indigo-400 dark:border-indigo-900/30">
+                      Likely Active
+                    </span>
+                  );
+                }
+                if (s === 'ARCHIVED') {
+                  return (
+                    <span className="px-2 py-0.5 rounded border text-[8.5px] font-black uppercase tracking-wider bg-zinc-100 text-zinc-500 border-zinc-250 dark:bg-zinc-800/40 dark:text-zinc-400 dark:border-zinc-700/50">
+                      Archived / Past
+                    </span>
+                  );
+                }
+                return (
+                  <span className="px-2 py-0.5 rounded border text-[8.5px] font-black uppercase tracking-wider bg-zinc-50 text-zinc-400 border-zinc-200 dark:bg-zinc-800/25 dark:text-zinc-500">
+                    Unknown Status
+                  </span>
+                );
+              };
 
-                {/* Card Title & Info */}
-                <div className="flex flex-col gap-1.5">
-                  <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="flex items-center gap-1 font-bold text-indigo-500 dark:text-indigo-400">
-                        <MapPin className="w-3.5 h-3.5 text-zinc-450" />
-                        {item.university.name}
-                      </span>
-                      {item.department && (
-                        <>
-                          <span>•</span>
-                          <span className="text-zinc-500 dark:text-zinc-400 font-medium">{item.department.name}</span>
-                        </>
+              return (
+                <div 
+                  key={item.id} 
+                  className="card-surface p-6 hover-lift flex flex-col gap-4 relative overflow-hidden"
+                >
+                  {item.isVerified && (
+                    <div className="absolute top-0 left-0 right-0 h-1 bg-emerald-500"></div>
+                  )}
+
+                  {/* Card Title & Info */}
+                  <div className="flex flex-col gap-1.5">
+                    <div className="flex flex-wrap items-center justify-between gap-3 text-[10px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-wide">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="flex items-center gap-1 font-bold text-indigo-500 dark:text-indigo-400">
+                          <MapPin className="w-3.5 h-3.5 text-zinc-450" />
+                          {item.university.name}
+                        </span>
+                        {item.department && (
+                          <>
+                            <span>•</span>
+                            <span className="text-zinc-500 dark:text-zinc-400 font-medium">{item.department.name}</span>
+                          </>
+                        )}
+                      </div>
+
+                      <div className="flex items-center gap-1.5">
+                        {getStatusBadge(item.activityStatus)}
+                        
+                        <span className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wider ${getSourceTypeColor(item.sourceType)}`}>
+                          {item.sourceType}
+                        </span>
+                        
+                        {item.isVerified && (
+                          <span className="flex items-center gap-0.5 text-emerald-500 bg-emerald-50/50 border border-emerald-200/20 rounded px-2 py-0.5 text-[9px] font-bold tracking-wider">
+                            <CheckCircle2 className="w-3 h-3" />
+                            Verified
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <h3 className="text-lg md:text-xl font-bold text-zinc-800 dark:text-zinc-100 hover:text-indigo-500 transition-colors leading-snug mt-1">
+                      <Link href={`/research/${item.id}`}>{item.title}</Link>
+                    </h3>
+                  </div>
+
+                  {/* Activity Evidence Callout */}
+                  {item.activityEvidence && (
+                    <div className="text-[11px] font-medium text-emerald-600 dark:text-emerald-400 bg-emerald-500/5 dark:bg-emerald-950/20 border border-emerald-500/10 dark:border-emerald-900/30 px-3 py-1.5 rounded-xl flex items-center gap-1.5 -mt-1 shadow-sm">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0"></span>
+                      <span className="font-semibold text-zinc-500 dark:text-zinc-400 mr-1">Activity Indicator:</span>
+                      <span>{item.activityEvidence}</span>
+                    </div>
+                  )}
+
+                  {/* Summary */}
+                  <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal line-clamp-3">
+                    {item.summary}
+                  </p>
+
+                  {/* Dynamic Topics Tags */}
+                  {item.topics && item.topics.length > 0 && (
+                    <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                      <Tag className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
+                      {item.topics.map((t: any) => (
+                        <span 
+                          key={t.topic.id}
+                          className="text-[9px] font-semibold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-350"
+                        >
+                          {t.topic.name}
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Footer details & Actions */}
+                  <div className="border-t border-zinc-100 dark:border-zinc-800 mt-2 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500">
+                    <div className="flex flex-wrap items-center gap-4">
+                      {item.professor && (
+                        <Link 
+                          href={`/professor/${item.professor.id}`}
+                          className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 hover:text-indigo-500 transition-colors"
+                        >
+                          <User className="w-4 h-4 text-zinc-400" />
+                          Prof. {item.professor.name}
+                        </Link>
                       )}
+                      <span className="flex items-center gap-1.5 font-medium">
+                        <Calendar className="w-4 h-4 text-zinc-400" />
+                        Last Verified: {formatRecency(item.lastVerified || item.publicationDate, item.createdAt)}
+                      </span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                      <span className={`px-2 py-0.5 rounded border text-[9px] font-bold uppercase tracking-wider ${getSourceTypeColor(item.sourceType)}`}>
-                        {item.sourceType}
-                      </span>
-                      {item.isVerified && (
-                        <span className="flex items-center gap-0.5 text-emerald-500 bg-emerald-50/50 border border-emerald-200/20 rounded px-2 py-0.5 text-[9px] font-bold tracking-wider">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Verified
-                        </span>
+                      {item.professor && (
+                        <Link
+                          href={`/professor/${item.professor.id}?draftFor=${item.id}`}
+                          className="px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-900/30 text-indigo-505 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-[10px] font-bold transition-all flex items-center gap-1"
+                        >
+                          <Mail className="w-3.5 h-3.5" />
+                          Reach Out
+                        </Link>
                       )}
+                      <Link
+                        href={`/research/${item.id}`}
+                        className="px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold transition-all flex items-center gap-1"
+                      >
+                        Details
+                        <ChevronRight className="w-3.5 h-3.5" />
+                      </Link>
                     </div>
                   </div>
 
-                  <h3 className="text-lg md:text-xl font-bold text-zinc-800 dark:text-zinc-100 hover:text-indigo-500 transition-colors leading-snug mt-1">
-                    <Link href={`/research/${item.id}`}>{item.title}</Link>
-                  </h3>
                 </div>
+              );
+            })
+          )}
 
-                {/* Summary */}
-                <p className="text-xs sm:text-sm text-zinc-500 dark:text-zinc-400 leading-relaxed font-normal line-clamp-3">
-                  {item.summary}
-                </p>
-
-                {/* Dynamic Topics Tags */}
-                {item.topics && item.topics.length > 0 && (
-                  <div className="flex flex-wrap items-center gap-1.5 mt-1">
-                    <Tag className="w-3.5 h-3.5 text-zinc-400 shrink-0" />
-                    {item.topics.map((t: any) => (
-                      <span 
-                        key={t.topic.id}
-                        className="text-[9px] font-semibold px-2 py-0.5 rounded bg-zinc-100 dark:bg-zinc-800 text-zinc-500 dark:text-zinc-350"
-                      >
-                        {t.topic.name}
-                      </span>
-                    ))}
-                  </div>
-                )}
-
-                {/* Footer details & Actions */}
-                <div className="border-t border-zinc-100 dark:border-zinc-800 mt-2 pt-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4 text-[10px] font-bold text-zinc-400 dark:text-zinc-500">
-                  <div className="flex flex-wrap items-center gap-4">
-                    {item.professor && (
-                      <Link 
-                        href={`/professor/${item.professor.id}`}
-                        className="flex items-center gap-1.5 text-zinc-700 dark:text-zinc-300 hover:text-indigo-500 transition-colors"
-                      >
-                        <User className="w-4 h-4 text-zinc-400" />
-                        Prof. {item.professor.name}
-                      </Link>
-                    )}
-                    <span className="flex items-center gap-1.5 font-medium">
-                      <Calendar className="w-4 h-4 text-zinc-400" />
-                      Updated: {formatRecency(item.publicationDate, item.createdAt)}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-2">
-                    {item.professor && (
-                      <Link
-                        href={`/professor/${item.professor.id}?draftFor=${item.id}`}
-                        className="px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-900/30 text-indigo-505 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-[10px] font-bold transition-all flex items-center gap-1"
-                      >
-                        <Mail className="w-3.5 h-3.5" />
-                        Reach Out
-                      </Link>
-                    )}
-                    <Link
-                      href={`/research/${item.id}`}
-                      className="px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold transition-all flex items-center gap-1"
-                    >
-                      Details
-                      <ChevronRight className="w-3.5 h-3.5" />
-                    </Link>
-                  </div>
-                </div>
-
+          {/* Pagination Controls */}
+          {totalPages > 1 && (
+            <div className="mt-8 flex items-center justify-between border-t border-zinc-100 dark:border-zinc-800 pt-6">
+              <span className="text-[10px] font-bold text-zinc-400 dark:text-zinc-550 uppercase tracking-widest pl-1">
+                Showing Page {page} of {totalPages} ({totalCount} opportunities)
+              </span>
+              <div className="flex gap-2 font-bold text-[10px] uppercase tracking-wider">
+                <button
+                  disabled={page <= 1}
+                  onClick={() => changePage(page - 1)}
+                  className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-indigo-505 disabled:opacity-40 transition-all cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Prev
+                </button>
+                <button
+                  disabled={page >= totalPages}
+                  onClick={() => changePage(page + 1)}
+                  className="px-4 py-2 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:text-indigo-505 disabled:opacity-40 transition-all cursor-pointer disabled:cursor-not-allowed"
+                >
+                  Next
+                </button>
               </div>
-            ))
+            </div>
           )}
 
         </div>
