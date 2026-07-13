@@ -165,6 +165,9 @@ export async function processLink(linkId: string): Promise<boolean> {
           sourceType: data.sourceType,
           confidenceScores: data.confidenceScores,
           missingInfoFlags: data.missingInfoFlags,
+          activityStatus: data.activityStatus || 'ACTIVE',
+          activityEvidence: data.activityEvidence || null,
+          lastVerified: new Date(),
           updatedAt: new Date()
         }
       });
@@ -182,7 +185,10 @@ export async function processLink(linkId: string): Promise<boolean> {
           sourceUrl: data.sourceUrl,
           sourceType: data.sourceType,
           confidenceScores: data.confidenceScores,
-          missingInfoFlags: data.missingInfoFlags
+          missingInfoFlags: data.missingInfoFlags,
+          activityStatus: data.activityStatus || 'ACTIVE',
+          activityEvidence: data.activityEvidence || null,
+          lastVerified: new Date()
         }
       });
     }
