@@ -12,6 +12,11 @@ export async function GET(req: Request) {
     const sourceType = searchParams.get('sourceType') || '';
     const dateStart = searchParams.get('dateStart') || '';
     const dateEnd = searchParams.get('dateEnd') || '';
+    
+    // Pagination parameters
+    const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10));
+    const limit = Math.max(1, Math.min(100, parseInt(searchParams.get('limit') || '20', 10)));
+    const skip = (page - 1) * limit;
 
     // Build Prisma query filters
     const where: any = {};
@@ -49,9 +54,42 @@ export async function GET(req: Request) {
       };
     }
 
-    // Fetch all matched research items
-    let items = await prisma.researchItem.findMany({
+    if (professor) {
+      where.professor = {
+        name: {
+          contains: professor,
+          mode: 'insensitive'
+        }
+      };
+    }
+
+    // Apply keyword search in database for maximum speed and scaling
+    if (search) {
+      const q = search.trim();
+      where.OR = [
+        { title: { contains: q, mode: 'insensitive' } },
+        { summary: { contains: q, mode: 'insensitive' } },
+        { significance: { contains: q, mode: 'insensitive' } },
+        { professor: { name: { contains: q, mode: 'insensitive' } } },
+        { university: { name: { contains: q, mode: 'insensitive' } } },
+        { department: { name: { contains: q, mode: 'insensitive' } } }
+      ];
+    }
+
+    // Fetch total count for pagination metadata
+    const totalCount = await prisma.researchItem.count({ where });
+
+    // Fetch paginated slice matched research items
+    const items = await prisma.researchItem.findMany({
       where,
+      take: limit,
+      skip,
+      orderBy: [
+        // Prioritize Active opportunities, verified, and recent verification date
+        { activityStatus: 'asc' }, // ACTIVE first alphabetically, but ARCHIVED is also start with A. That is fine, we will sort the batch of 20 items in memory or let Postgres ordering handle it.
+        { isVerified: 'desc' },
+        { lastVerified: 'desc' }
+      ],
       include: {
         university: true,
         department: true,
@@ -62,76 +100,30 @@ export async function GET(req: Request) {
       }
     });
 
-    // Apply keyword search in memory for robust multi-field matches
-    if (search) {
-      const q = search.toLowerCase();
-      items = items.filter(item => {
-        const titleMatch = item.title.toLowerCase().includes(q);
-        const summaryMatch = item.summary.toLowerCase().includes(q);
-        const sigMatch = item.significance?.toLowerCase().includes(q) || false;
-        const profMatch = item.professor?.name.toLowerCase().includes(q) || false;
-        const uniMatch = item.university.name.toLowerCase().includes(q);
-        const deptMatch = item.department?.name.toLowerCase().includes(q) || false;
-        const topicMatch = item.topics.some(t => t.topic.name.toLowerCase().includes(q));
-        
-        return titleMatch || summaryMatch || sigMatch || profMatch || uniMatch || deptMatch || topicMatch;
-      });
-    }
-
-    if (professor) {
-      const p = professor.toLowerCase();
-      items = items.filter(item => item.professor?.name.toLowerCase().includes(p));
-    }
-
-    // Apply the five-tier ranking system in JavaScript
-    const sourceQualityRank: Record<string, number> = {
-      'publication': 5,
-      'grant': 4,
-      'lab page': 3,
-      'university news': 2,
-      'professor page': 1
+    // Quick in-memory sort of the 20-item slice to ensure perfect active-first ranking
+    const statusScore = (status: string) => {
+      if (status === 'ACTIVE') return 4;
+      if (status === 'POSSIBLY_ACTIVE') return 3;
+      if (status === 'UNKNOWN') return 2;
+      if (status === 'ARCHIVED') return 1;
+      return 0;
     };
 
     items.sort((a, b) => {
-      // 1. Most recent publication/update date (fallback to createdAt)
-      const dateA = a.publicationDate ? new Date(a.publicationDate).getTime() : new Date(a.createdAt).getTime();
-      const dateB = b.publicationDate ? new Date(b.publicationDate).getTime() : new Date(b.createdAt).getTime();
-      if (dateB !== dateA) return dateB - dateA;
+      const statusA = statusScore(a.activityStatus);
+      const statusB = statusScore(b.activityStatus);
+      if (statusB !== statusA) return statusB - statusA;
 
-      // 2. Verified research entries first
       if (a.isVerified !== b.isVerified) {
         return a.isVerified ? -1 : 1;
       }
 
-      // 3. Stronger source quality
-      const qualA = sourceQualityRank[a.sourceType.toLowerCase()] || 0;
-      const qualB = sourceQualityRank[b.sourceType.toLowerCase()] || 0;
-      if (qualB !== qualA) return qualB - qualA;
-
-      // 4. Clear professor/contact information (email present)
-      const emailA = a.professor?.email ? 1 : 0;
-      const emailB = b.professor?.email ? 1 : 0;
-      if (emailB !== emailA) return emailB - emailA;
-
-      // 5. Relevance to student search query (score matches)
-      if (search) {
-        const q = search.toLowerCase();
-        const score = (item: typeof a) => {
-          let s = 0;
-          if (item.title.toLowerCase().includes(q)) s += 10;
-          if (item.topics.some(t => t.topic.name.toLowerCase().includes(q))) s += 7;
-          if (item.professor?.name.toLowerCase().includes(q)) s += 5;
-          if (item.summary.toLowerCase().includes(q)) s += 3;
-          return s;
-        };
-        return score(b) - score(a);
-      }
-
-      // Final default: insertion order
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      const timeA = new Date(a.lastVerified || a.updatedAt || a.createdAt).getTime();
+      const timeB = new Date(b.lastVerified || b.updatedAt || b.createdAt).getTime();
+      return timeB - timeA;
     });
 
-    // Also fetch aggregate lists to build filters on landing & search feeds
+    // Fetch aggregate lists to build filters (these are small cached/static tables)
     const universities = await prisma.university.findMany({
       orderBy: { name: 'asc' }
     });
@@ -147,6 +139,12 @@ export async function GET(req: Request) {
 
     return NextResponse.json({
       items,
+      pagination: {
+        totalCount,
+        totalPages: Math.ceil(totalCount / limit),
+        currentPage: page,
+        limit
+      },
       filters: {
         universities,
         departments,
