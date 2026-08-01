@@ -2,6 +2,14 @@
 
 ResearchLink is a student-friendly university research discovery platform. It enables administrators to submit public research links, automatically processes those URLs using an extraction engine (powered by metadata heuristics and fallback LLM parsing), ranks the resulting profiles dynamically in a recent-first feed, and helps undergraduate students draft highly tailored academic outreach emails.
 
+## Supported Institutions
+- **CSULB** (California State University, Long Beach) - `csulb.edu`
+- **University of the Pacific (UOP)** - `pacific.edu`
+- **MIT** - `mit.edu`
+- **Stanford University** - `stanford.edu`
+- **Harvard University** - `harvard.edu`
+- **UC Berkeley** - `berkeley.edu`
+
 ---
 
 ## Technical Stack
