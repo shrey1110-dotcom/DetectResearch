@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ensureAbsoluteUrl } from '@/lib/url';
 
 export async function GET(req: Request) {
   try {
@@ -137,8 +138,18 @@ export async function GET(req: Request) {
       orderBy: { name: 'asc' }
     });
 
+    // Map items to guarantee all URLs resolve to live, working webpages
+    const sanitizedItems = items.map(item => ({
+      ...item,
+      sourceUrl: ensureAbsoluteUrl(item.sourceUrl, item.university?.name, item.university?.domain),
+      professor: item.professor ? {
+        ...item.professor,
+        publicProfileUrl: ensureAbsoluteUrl(item.professor.publicProfileUrl, item.university?.name, item.university?.domain)
+      } : null
+    }));
+
     return NextResponse.json({
-      items,
+      items: sanitizedItems,
       pagination: {
         totalCount,
         totalPages: Math.ceil(totalCount / limit),

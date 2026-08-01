@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
 import { getCurrentUser } from '@/lib/auth';
+import { ensureAbsoluteUrl } from '@/lib/url';
 
 export async function GET(
   req: Request,
@@ -75,9 +76,27 @@ export async function GET(
       isSaved = !!saved;
     }
 
+    const sanitizedItem = {
+      ...item,
+      sourceUrl: ensureAbsoluteUrl(item.sourceUrl, item.university?.name, item.university?.domain),
+      professor: item.professor ? {
+        ...item.professor,
+        publicProfileUrl: ensureAbsoluteUrl(item.professor.publicProfileUrl, item.university?.name, item.university?.domain)
+      } : null
+    };
+
+    const sanitizedRelated = relatedItems.map(rel => ({
+      ...rel,
+      sourceUrl: ensureAbsoluteUrl(rel.sourceUrl, rel.university?.name, rel.university?.domain),
+      professor: rel.professor ? {
+        ...rel.professor,
+        publicProfileUrl: ensureAbsoluteUrl(rel.professor.publicProfileUrl, rel.university?.name, rel.university?.domain)
+      } : null
+    }));
+
     return NextResponse.json({
-      item,
-      relatedItems,
+      item: sanitizedItem,
+      relatedItems: sanitizedRelated,
       isSaved
     });
   } catch (err: any) {

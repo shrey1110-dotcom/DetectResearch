@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/prisma';
+import { ensureAbsoluteUrl } from '@/lib/url';
 
 export async function GET(
   req: Request,
@@ -73,18 +74,23 @@ export async function GET(
     });
     const interests = Array.from(interestSet);
 
+    const sanitizedResearchItems = uniqueResearchItems.map(item => ({
+      ...item,
+      sourceUrl: ensureAbsoluteUrl(item.sourceUrl, item.university?.name, item.university?.domain)
+    }));
+
     return NextResponse.json({
       professor: {
         id: professor.id,
         name: professor.name,
         title: professor.title,
         email: professor.email,
-        publicProfileUrl: professor.publicProfileUrl,
+        publicProfileUrl: ensureAbsoluteUrl(professor.publicProfileUrl, professor.university?.name, professor.university?.domain),
         university: professor.university,
         department: professor.department,
         interests
       },
-      researchItems: uniqueResearchItems
+      researchItems: sanitizedResearchItems
     });
   } catch (err: any) {
     console.error('Professor detail API error:', err);
