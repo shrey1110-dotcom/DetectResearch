@@ -4,7 +4,7 @@ import bcrypt from 'bcryptjs';
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Start seeding...');
+  console.log('Start seeding with real live URLs...');
 
   // 1. Clean existing database
   await prisma.extractionLog.deleteMany({});
@@ -51,7 +51,7 @@ async function main() {
     }
   });
 
-  console.log('Users created: Admin (admin@researchlink.edu/admin123), Student (student@researchlink.edu/student123)');
+  console.log('Users created: Admin & Student');
 
   // 3. Create Universities
   const csulb = await prisma.university.create({ data: { name: 'CSULB', domain: 'csulb.edu' } });
@@ -61,7 +61,7 @@ async function main() {
   const harvard = await prisma.university.create({ data: { name: 'Harvard University', domain: 'harvard.edu' } });
   const berkeley = await prisma.university.create({ data: { name: 'UC Berkeley', domain: 'berkeley.edu' } });
 
-  console.log('Universities created (including CSULB and UOP).');
+  console.log('Universities created.');
 
   // 4. Create Departments
   const csulbCECS = await prisma.department.create({
@@ -134,7 +134,7 @@ async function main() {
       universityId: uop.id,
       departmentId: uopBio.id,
       email: 'ebasha@pacific.edu',
-      publicProfileUrl: 'https://www.pacific.edu/engineering-and-computer-science'
+      publicProfileUrl: 'https://www.pacific.edu/engineering-and-computer-science/academics/computer-science'
     }
   });
 
@@ -145,7 +145,7 @@ async function main() {
       universityId: mit.id,
       departmentId: mitMatSci.id,
       email: 'echen@mit.edu',
-      publicProfileUrl: 'https://dmse.mit.edu/people/evelyn-chen'
+      publicProfileUrl: 'https://dmse.mit.edu'
     }
   });
 
@@ -156,7 +156,7 @@ async function main() {
       universityId: stanford.id,
       departmentId: stanfordChemEng.id,
       email: 'zbao@stanford.edu',
-      publicProfileUrl: 'https://chemeng.stanford.edu/people/zhenan-bao'
+      publicProfileUrl: 'https://bao.stanford.edu'
     }
   });
 
@@ -167,7 +167,7 @@ async function main() {
       universityId: harvard.id,
       departmentId: harvardChem.id,
       email: 'drliu@harvard.edu',
-      publicProfileUrl: 'https://chemistry.harvard.edu/people/david-liu'
+      publicProfileUrl: 'https://chemistry.harvard.edu'
     }
   });
 
@@ -178,11 +178,11 @@ async function main() {
       universityId: berkeley.id,
       departmentId: berkeleyEECS.id,
       email: 'tomlin@berkeley.edu',
-      publicProfileUrl: 'https://eecs.berkeley.edu/people/claire-tomlin'
+      publicProfileUrl: 'https://eecs.berkeley.edu'
     }
   });
 
-  console.log('Professors created (including CSULB & UOP faculty).');
+  console.log('Professors created.');
 
   // 6. Create Topics
   const topicNames = [
@@ -195,12 +195,10 @@ async function main() {
     topicMap[name] = await prisma.topic.create({ data: { name } });
   }
 
-  console.log('Topics created.');
-
-  // 7. Seed CSULB Link 1 (Signal Intelligence / 5G)
+  // 7. Seed CSULB Link 1
   const linkCSULB1 = await prisma.researchLink.create({
     data: {
-      url: 'https://www.csulb.edu/college-of-engineering/research/5g-wireless-signal-intelligence',
+      url: 'https://www.csulb.edu/college-of-engineering/computer-engineering-computer-science',
       status: 'PROCESSED',
       addedByUserId: adminUser.id
     }
@@ -216,7 +214,7 @@ async function main() {
       departmentId: csulbCECS.id,
       professorId: shabnamSodagari.id,
       publicationDate: new Date('2026-06-18'),
-      sourceUrl: linkCSULB1.url,
+      sourceUrl: 'https://www.csulb.edu/college-of-engineering/computer-engineering-computer-science',
       sourceType: 'publication',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -236,18 +234,10 @@ async function main() {
     data: { professorId: shabnamSodagari.id, researchItemId: itemCSULB1.id }
   });
 
-  await prisma.extractionLog.createMany({
-    data: [
-      { researchLinkId: linkCSULB1.id, stepName: 'ENQUEUE', status: 'INFO', message: 'CSULB link added to queue.' },
-      { researchLinkId: linkCSULB1.id, stepName: 'FETCHING', status: 'INFO', message: 'Fetched CSULB CECS research webpage.' },
-      { researchLinkId: linkCSULB1.id, stepName: 'SAVING', status: 'SUCCESS', message: 'Successfully extracted CSULB research profile.' }
-    ]
-  });
-
-  // 8. Seed CSULB Link 2 (Autonomous Drone Navigation)
+  // 8. Seed CSULB Link 2
   const linkCSULB2 = await prisma.researchLink.create({
     data: {
-      url: 'https://www.csulb.edu/college-of-engineering/research/autonomous-drone-swarms',
+      url: 'https://www.csulb.edu/college-of-engineering',
       status: 'PROCESSED',
       addedByUserId: adminUser.id
     }
@@ -263,7 +253,7 @@ async function main() {
       departmentId: csulbMAE.id,
       professorId: christopherDares.id,
       publicationDate: new Date('2026-05-28'),
-      sourceUrl: linkCSULB2.url,
+      sourceUrl: 'https://www.csulb.edu/college-of-engineering',
       sourceType: 'lab page',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -283,17 +273,10 @@ async function main() {
     data: { professorId: christopherDares.id, researchItemId: itemCSULB2.id }
   });
 
-  await prisma.extractionLog.createMany({
-    data: [
-      { researchLinkId: linkCSULB2.id, stepName: 'ENQUEUE', status: 'INFO', message: 'CSULB drone research enqueued.' },
-      { researchLinkId: linkCSULB2.id, stepName: 'SAVING', status: 'SUCCESS', message: 'Extracted CSULB aerospace drone research.' }
-    ]
-  });
-
-  // 9. Seed UOP Link 1 (Agricultural IoT Sensors)
+  // 9. Seed UOP Link 1
   const linkUOP1 = await prisma.researchLink.create({
     data: {
-      url: 'https://www.pacific.edu/engineering-and-computer-science/research/agricultural-iot-sensors',
+      url: 'https://www.pacific.edu/engineering-and-computer-science',
       status: 'PROCESSED',
       addedByUserId: adminUser.id
     }
@@ -309,7 +292,7 @@ async function main() {
       departmentId: uopCS.id,
       professorId: michaelCanniff.id,
       publicationDate: new Date('2026-07-02'),
-      sourceUrl: linkUOP1.url,
+      sourceUrl: 'https://www.pacific.edu/engineering-and-computer-science',
       sourceType: 'grant',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -329,17 +312,10 @@ async function main() {
     data: { professorId: michaelCanniff.id, researchItemId: itemUOP1.id }
   });
 
-  await prisma.extractionLog.createMany({
-    data: [
-      { researchLinkId: linkUOP1.id, stepName: 'ENQUEUE', status: 'INFO', message: 'UOP link enqueued.' },
-      { researchLinkId: linkUOP1.id, stepName: 'SAVING', status: 'SUCCESS', message: 'Saved UOP agricultural IoT project.' }
-    ]
-  });
-
-  // 10. Seed UOP Link 2 (Microfluidic Pathogen Detection)
+  // 10. Seed UOP Link 2
   const linkUOP2 = await prisma.researchLink.create({
     data: {
-      url: 'https://www.pacific.edu/engineering-and-computer-science/research/microfluidic-biosensors',
+      url: 'https://www.pacific.edu/engineering-and-computer-science/academics/computer-science',
       status: 'PROCESSED',
       addedByUserId: adminUser.id
     }
@@ -355,7 +331,7 @@ async function main() {
       departmentId: uopBio.id,
       professorId: elizabethBasha.id,
       publicationDate: new Date('2026-06-25'),
-      sourceUrl: linkUOP2.url,
+      sourceUrl: 'https://www.pacific.edu/engineering-and-computer-science/academics/computer-science',
       sourceType: 'university news',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -375,17 +351,10 @@ async function main() {
     data: { professorId: elizabethBasha.id, researchItemId: itemUOP2.id }
   });
 
-  await prisma.extractionLog.createMany({
-    data: [
-      { researchLinkId: linkUOP2.id, stepName: 'ENQUEUE', status: 'INFO', message: 'UOP biosensor link enqueued.' },
-      { researchLinkId: linkUOP2.id, stepName: 'SAVING', status: 'SUCCESS', message: 'Saved UOP bioengineering research.' }
-    ]
-  });
-
-  // Seed baseline MIT, Stanford, Harvard, Berkeley items
+  // MIT
   const link1 = await prisma.researchLink.create({
     data: {
-      url: 'https://news.mit.edu/2026/quantum-coherence-materials-0512',
+      url: 'https://news.mit.edu',
       status: 'PROCESSED',
       addedByUserId: adminUser.id
     }
@@ -401,7 +370,7 @@ async function main() {
       departmentId: mitMatSci.id,
       professorId: evelynChen.id,
       publicationDate: new Date('2026-05-12'),
-      sourceUrl: link1.url,
+      sourceUrl: 'https://news.mit.edu',
       sourceType: 'university news',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -421,9 +390,10 @@ async function main() {
     data: { professorId: evelynChen.id, researchItemId: item1.id }
   });
 
+  // Stanford
   const link2 = await prisma.researchLink.create({
     data: {
-      url: 'https://stanford.edu/lab/bao-group/flexible-organic-electronics',
+      url: 'https://engineering.stanford.edu',
       status: 'PROCESSED',
       addedByUserId: adminUser.id
     }
@@ -439,7 +409,7 @@ async function main() {
       departmentId: stanfordChemEng.id,
       professorId: zhenanBao.id,
       publicationDate: new Date('2026-03-24'),
-      sourceUrl: link2.url,
+      sourceUrl: 'https://engineering.stanford.edu',
       sourceType: 'lab page',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -459,8 +429,7 @@ async function main() {
     data: { professorId: zhenanBao.id, researchItemId: item2.id }
   });
 
-  console.log('All research links (including CSULB & UOP) seeded and processed successfully.');
-  console.log('Seeding finished successfully.');
+  console.log('Real working live links seeded successfully.');
 }
 
 main()
