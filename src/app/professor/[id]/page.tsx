@@ -38,19 +38,44 @@ function ProfessorProfileContent() {
 
   const fetchProfessor = async () => {
     try {
-      const res = await fetch(`/api/professors/${id}`);
-      if (!res.ok) {
-        throw new Error('Professor details not found');
+      if (id !== 'general') {
+        const res = await fetch(`/api/professors/${id}`);
+        if (res.ok) {
+          const json = await res.json();
+          setProfessor(json.professor);
+          setResearchItems(json.researchItems);
+          if (draftForPaperId) {
+            setSelectedPaperId(draftForPaperId);
+          } else if (json.researchItems.length > 0) {
+            setSelectedPaperId(json.researchItems[0].id);
+          }
+          return;
+        }
       }
-      const json = await res.json();
-      setProfessor(json.professor);
-      setResearchItems(json.researchItems);
 
+      // Fallback: If draftForPaperId is present, fetch research item details to construct profile
       if (draftForPaperId) {
-        setSelectedPaperId(draftForPaperId);
-      } else if (json.researchItems.length > 0) {
-        setSelectedPaperId(json.researchItems[0].id);
+        const paperRes = await fetch(`/api/research/${draftForPaperId}`);
+        if (paperRes.ok) {
+          const paperJson = await paperRes.json();
+          const item = paperJson.item;
+          setProfessor({
+            id: 'general',
+            name: item.professor?.name || 'Department Lead',
+            title: item.professor?.title || 'Principal Investigator',
+            university: item.university,
+            department: item.department || { name: 'Engineering & Research' },
+            email: item.professor?.email || `research@${item.university.domain || 'university.edu'}`,
+            publicProfileUrl: item.professor?.publicProfileUrl || item.sourceUrl,
+            interests: item.topics?.map((t: any) => t.topic.name) || [item.sourceType]
+          });
+          setResearchItems([item]);
+          setSelectedPaperId(item.id);
+          return;
+        }
       }
+
+      throw new Error('Professor details not found');
     } catch (err: any) {
       setError(err?.message || 'Failed to load professor profile');
     } finally {
@@ -60,7 +85,7 @@ function ProfessorProfileContent() {
 
   useEffect(() => {
     if (id) fetchProfessor();
-  }, [id]);
+  }, [id, draftForPaperId]);
 
   useEffect(() => {
     const fetchUserDefault = async () => {
@@ -122,7 +147,7 @@ ${studentName || '[Student Name]'}`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          professorId: id,
+          professorId: professor?.id || 'general',
           researchItemId: selectedPaperId,
           studentName,
           studentMajor,
@@ -147,9 +172,25 @@ ${studentName || '[Student Name]'}`;
     }
   };
 
+  const getMailtoEmail = () => {
+    if (professor?.email) return professor.email;
+    if (professor?.university?.domain) return `research@${professor.university.domain}`;
+    return 'research@university.edu';
+  };
+
   const getMailtoLink = () => {
-    if (!professor?.email) return '#';
-    return `mailto:${professor.email}?subject=${encodeURIComponent(generatedSubject)}&body=${encodeURIComponent(generatedBody)}`;
+    const email = getMailtoEmail();
+    return `mailto:${email}?subject=${encodeURIComponent(generatedSubject)}&body=${encodeURIComponent(generatedBody)}`;
+  };
+
+  const handleSendMail = (e: React.MouseEvent) => {
+    e.preventDefault();
+    // Copy to clipboard automatically for maximum reliability across browsers
+    navigator.clipboard.writeText(`Subject: ${generatedSubject}\n\n${generatedBody}`);
+    setCopySuccess(true);
+    setTimeout(() => setCopySuccess(false), 3000);
+    // Launch mail client
+    window.location.href = getMailtoLink();
   };
 
   if (loading) {
@@ -481,15 +522,14 @@ Best,
                   </button>
 
                   {/* Open Mail */}
-                  {professor.email && (
-                    <a
-                      href={getMailtoLink()}
-                      className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[10px] font-bold text-white flex items-center gap-1 transition-all"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      Send Mail
-                    </a>
-                  )}
+                  <a
+                    href={getMailtoLink()}
+                    onClick={handleSendMail}
+                    className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-[10px] font-bold text-white flex items-center gap-1.5 transition-all cursor-pointer shadow-md shadow-indigo-500/20"
+                  >
+                    <Send className="w-3.5 h-3.5" />
+                    Send Mail
+                  </a>
                 </div>
 
               </div>

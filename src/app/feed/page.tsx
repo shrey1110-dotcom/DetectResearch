@@ -516,15 +516,13 @@ function FeedContent() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                      {item.professor && (
-                        <Link
-                          href={`/professor/${item.professor.id}?draftFor=${item.id}`}
-                          className="px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-900/30 text-indigo-505 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-[10px] font-bold transition-all flex items-center gap-1"
-                        >
-                          <Mail className="w-3.5 h-3.5" />
-                          Reach Out
-                        </Link>
-                      )}
+                      <Link
+                        href={item.professor ? `/professor/${item.professor.id}?draftFor=${item.id}` : `/professor/general?draftFor=${item.id}`}
+                        className="px-3 py-2 rounded-xl border border-indigo-200 dark:border-indigo-900/30 text-indigo-505 hover:bg-indigo-50/50 dark:hover:bg-indigo-950/20 text-[10px] font-bold transition-all flex items-center gap-1 cursor-pointer"
+                      >
+                        <Mail className="w-3.5 h-3.5" />
+                        Reach Out
+                      </Link>
                       <Link
                         href={`/research/${item.id}`}
                         className="px-3.5 py-2 rounded-xl bg-zinc-100 hover:bg-zinc-200 dark:bg-zinc-850 dark:hover:bg-zinc-800 text-zinc-700 dark:text-zinc-200 text-[10px] font-bold transition-all flex items-center gap-1"

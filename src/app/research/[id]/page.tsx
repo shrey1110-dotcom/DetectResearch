@@ -339,11 +339,18 @@ export default function ResearchDetailPage() {
                 </Link>
               </div>
             ) : (
-              <div className="text-center py-3 flex flex-col items-center gap-1">
-                <AlertCircle className="w-7 h-7 text-zinc-300" />
+              <div className="text-center py-3 flex flex-col items-center gap-2">
+                <AlertCircle className="w-6 h-6 text-zinc-300" />
                 <p className="text-[10px] text-zinc-400 font-medium leading-relaxed">
-                  No professor profiles associated.
+                  No direct professor profile attached.
                 </p>
+                <Link
+                  href={`/professor/general?draftFor=${item.id}`}
+                  className="w-full text-center py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs shadow-sm transition-all cursor-pointer flex items-center justify-center gap-1.5"
+                >
+                  <Mail className="w-3.5 h-3.5" />
+                  Reach Out regarding this Research
+                </Link>
               </div>
             )}
 
