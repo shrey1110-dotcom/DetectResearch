@@ -110,6 +110,46 @@ const MOCK_PROFILES: Record<string, Partial<ExtractedResearch>> = {
     activityEvidence: 'NSF grant awards active through 2028 with student researcher allocations.',
     confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
     missingInfoFlags: []
+  },
+  'csulb.edu': {
+    title: 'Deep Learning & Dynamic Spectrum Allocation for High-Density Urban 5G/6G Networks',
+    professorName: 'Shabnam Sodagari',
+    professorTitle: 'Associate Professor of Computer Engineering & Computer Science',
+    university: 'CSULB',
+    department: 'Computer Engineering & Computer Science (CECS)',
+    topic: 'Artificial Intelligence',
+    topics: ['Artificial Intelligence', 'Smart Grids'],
+    summary: 'CSULB researchers developed deep neural network classifiers to mitigate wireless RF interference and optimize spectrum sharing for emergency services and smart city devices in high-density urban environments.',
+    significance: 'Ensures reliable real-time communication channels for first responders and autonomous traffic sensors during network congestion.',
+    publicationDate: new Date('2026-06-18'),
+    sourceUrl: 'https://www.csulb.edu/college-of-engineering/research/5g-wireless-signal-intelligence',
+    sourceType: 'publication',
+    professorProfileUrl: 'https://www.csulb.edu/college-of-engineering/computer-engineering-computer-science',
+    email: 'shabnam.sodagari@csulb.edu',
+    activityStatus: 'ACTIVE',
+    activityEvidence: 'CSULB research portal shows active lab project and student positions.',
+    confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
+    missingInfoFlags: []
+  },
+  'pacific.edu': {
+    title: 'Low-Power Mesh IoT Sensor Nodes for Real-Time Agricultural Water Quality Monitoring',
+    professorName: 'Michael Canniff',
+    professorTitle: 'Associate Professor of Computer Science',
+    university: 'University of the Pacific',
+    department: 'Department of Computer Science',
+    topic: 'Climate Technology',
+    topics: ['Climate Technology', 'Smart Grids'],
+    summary: 'UOP engineering researchers designed self-powered electrochemical wireless sensors deployed across Central Valley farmland to monitor soil salinity, nitrate runoff, and irrigation efficiency.',
+    significance: 'Empowers local agricultural communities to optimize water conservation and prevent toxic fertilizer runoff into California waterways.',
+    publicationDate: new Date('2026-07-02'),
+    sourceUrl: 'https://www.pacific.edu/engineering-and-computer-science/research/agricultural-iot-sensors',
+    sourceType: 'grant',
+    professorProfileUrl: 'https://www.pacific.edu/engineering-and-computer-science',
+    email: 'mcanniff@pacific.edu',
+    activityStatus: 'ACTIVE',
+    activityEvidence: 'UOP active grant records and lab openings.',
+    confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
+    missingInfoFlags: []
   }
 };
 
@@ -483,6 +523,8 @@ function generateFallbackExtractorResult(url: string): ExtractedResearch {
 function extractUniversityFromUrl(url: string): string {
   try {
     const domain = new URL(url).hostname.replace('www.', '').toLowerCase();
+    if (domain.includes('csulb.edu')) return 'CSULB';
+    if (domain.includes('pacific.edu')) return 'University of the Pacific';
     if (domain.includes('mit.edu')) return 'MIT';
     if (domain.includes('stanford.edu')) return 'Stanford University';
     if (domain.includes('harvard.edu')) return 'Harvard University';
