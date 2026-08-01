@@ -278,7 +278,7 @@ ${studentName || '[Student Name]'}`;
 
           {professor.publicProfileUrl && (
             <a 
-              href={ensureAbsoluteUrl(professor.publicProfileUrl)}
+              href={ensureAbsoluteUrl(professor.publicProfileUrl, professor.university?.name)}
               target="_blank"
               rel="noopener noreferrer"
               className="px-4 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-800 text-zinc-600 dark:text-zinc-300 hover:text-indigo-500 hover:border-indigo-200 flex items-center gap-2 transition-colors cursor-pointer"

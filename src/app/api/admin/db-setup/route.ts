@@ -3,10 +3,13 @@ import prisma from '@/lib/prisma';
 
 // This route auto-creates all tables and seeds data using the Prisma Client
 // (no CLI/engines needed). Safe to call multiple times — it skips if tables exist.
-export async function GET() {
+export async function GET(req: Request) {
   const results: string[] = [];
 
   try {
+    const { searchParams } = new URL(req.url);
+    const forceReset = searchParams.get('reset') === 'true';
+
     // Ensure active research columns exist in Postgres (Safe migration for existing DB)
     const researchItemTableExists = await prisma.$queryRawUnsafe<{ exists: boolean }[]>(
       `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'research_items')`
@@ -15,6 +18,14 @@ export async function GET() {
       await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "activity_status" TEXT NOT NULL DEFAULT 'ACTIVE'`);
       await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "activity_evidence" TEXT`);
       await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "last_verified" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
+
+      // Update any legacy mock URLs in production Postgres to real live accessible portals
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.csulb.edu/college-of-engineering/computer-engineering-computer-science' WHERE "source_url" LIKE '%5g-wireless%' OR "university_id" IN (SELECT "id" FROM "universities" WHERE "domain" = 'csulb.edu')`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.pacific.edu/engineering-and-computer-science' WHERE "source_url" LIKE '%agricultural-iot%' OR "university_id" IN (SELECT "id" FROM "universities" WHERE "domain" = 'pacific.edu')`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://news.mit.edu' WHERE "source_url" LIKE '%mit-quantum%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://engineering.stanford.edu' WHERE "source_url" LIKE '%bao-group%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://chemistry.harvard.edu' WHERE "source_url" LIKE '%nature.com%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://eecs.berkeley.edu' WHERE "source_url" LIKE '%climate-resilient%'`);
     }
 
     // Step 1: Check if tables already exist
@@ -22,13 +33,13 @@ export async function GET() {
       `SELECT EXISTS (SELECT FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'universities')`
     );
     
-    if (tableCheck[0]?.exists) {
+    if (tableCheck[0]?.exists && !forceReset) {
       // Tables exist — check if we have seed data
       const count = await prisma.university.count();
       if (count > 0) {
         return NextResponse.json({ 
           success: true, 
-          message: 'Database already set up and seeded.',
+          message: 'Database updated and active.',
           universityCount: count 
         });
       }

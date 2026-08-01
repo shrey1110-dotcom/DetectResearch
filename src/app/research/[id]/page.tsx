@@ -319,7 +319,7 @@ export default function ResearchDetailPage() {
 
                   {item.professor.publicProfileUrl && (
                     <a 
-                      href={ensureAbsoluteUrl(item.professor.publicProfileUrl)}
+                      href={ensureAbsoluteUrl(item.professor.publicProfileUrl, item.university?.name)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 hover:text-indigo-500 transition-colors"
@@ -360,7 +360,7 @@ export default function ResearchDetailPage() {
                 Source Document
               </span>
               <a 
-                href={ensureAbsoluteUrl(item.sourceUrl)} 
+                href={ensureAbsoluteUrl(item.sourceUrl, item.university?.name)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-indigo-500 dark:text-indigo-400 font-bold hover:underline"
