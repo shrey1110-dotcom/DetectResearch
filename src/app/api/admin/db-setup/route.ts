@@ -20,12 +20,28 @@ export async function GET(req: Request) {
       await prisma.$executeRawUnsafe(`ALTER TABLE "research_items" ADD COLUMN IF NOT EXISTS "last_verified" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP`);
 
       // Update any legacy mock URLs in production Postgres to real live accessible portals
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.utexas.edu' WHERE "source_url" LIKE '%utaustin%' OR "source_url" LIKE '%utexas%'`);
       await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.csulb.edu/college-of-engineering/computer-engineering-computer-science' WHERE "source_url" LIKE '%5g-wireless%' OR "university_id" IN (SELECT "id" FROM "universities" WHERE "domain" = 'csulb.edu')`);
       await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.pacific.edu/engineering-and-computer-science' WHERE "source_url" LIKE '%agricultural-iot%' OR "university_id" IN (SELECT "id" FROM "universities" WHERE "domain" = 'pacific.edu')`);
       await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://news.mit.edu' WHERE "source_url" LIKE '%mit-quantum%'`);
       await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://engineering.stanford.edu' WHERE "source_url" LIKE '%bao-group%'`);
       await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://chemistry.harvard.edu' WHERE "source_url" LIKE '%nature.com%'`);
       await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://eecs.berkeley.edu' WHERE "source_url" LIKE '%climate-resilient%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.ufl.edu' WHERE "source_url" LIKE '%universityofflorida%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.dartmouth.edu' WHERE "source_url" LIKE '%dartmouthcollege%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://engineering.jhu.edu' WHERE "source_url" LIKE '%johnshopkins%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.bu.edu' WHERE "source_url" LIKE '%bostonuniversity%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.upenn.edu' WHERE "source_url" LIKE '%universityofpennsylvania%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.umd.edu' WHERE "source_url" LIKE '%universityofmaryland%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.osu.edu' WHERE "source_url" LIKE '%ohiostateuniversity%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.washington.edu' WHERE "source_url" LIKE '%universityofwashington%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://pme.uchicago.edu' WHERE "source_url" LIKE '%universityofchicago%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.vanderbilt.edu' WHERE "source_url" LIKE '%vanderbiltuniversity%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.brown.edu' WHERE "source_url" LIKE '%brownuniversity%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.duke.edu' WHERE "source_url" LIKE '%dukeuniversity%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://engineering.purdue.edu' WHERE "source_url" LIKE '%purdueuniversity%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.samueli.ucla.edu' WHERE "source_url" LIKE '%ucla%'`);
+      await prisma.$executeRawUnsafe(`UPDATE "research_items" SET "source_url" = 'https://www.eas.caltech.edu' WHERE "source_url" LIKE '%caltech%'`);
     }
 
     // Step 1: Check if tables already exist
