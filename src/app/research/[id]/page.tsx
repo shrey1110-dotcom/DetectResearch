@@ -8,6 +8,7 @@ import {
   CheckCircle2, AlertTriangle, Info, Bookmark, ChevronRight, 
   ShieldAlert, BookOpen, AlertCircle, Terminal
 } from 'lucide-react';
+import { ensureAbsoluteUrl } from '@/lib/url';
 
 export default function ResearchDetailPage() {
   const params = useParams();
@@ -318,7 +319,7 @@ export default function ResearchDetailPage() {
 
                   {item.professor.publicProfileUrl && (
                     <a 
-                      href={item.professor.publicProfileUrl}
+                      href={ensureAbsoluteUrl(item.professor.publicProfileUrl)}
                       target="_blank"
                       rel="noopener noreferrer"
                       className="flex items-center gap-2 hover:text-indigo-500 transition-colors"
@@ -352,7 +353,7 @@ export default function ResearchDetailPage() {
                 Source Document
               </span>
               <a 
-                href={item.sourceUrl} 
+                href={ensureAbsoluteUrl(item.sourceUrl)} 
                 target="_blank" 
                 rel="noopener noreferrer"
                 className="inline-flex items-center gap-1 text-xs text-indigo-500 dark:text-indigo-400 font-bold hover:underline"
