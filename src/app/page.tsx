@@ -77,10 +77,16 @@ export default function LandingPage() {
 
           {/* Quick links */}
           <div className="mt-6 flex flex-wrap justify-center gap-2">
-            {['Quantum Computing', 'Gene Editing', 'AI Safety', 'Climate Tech', 'Bioelectronics'].map((t) => (
+            {['CSULB', 'UOP', 'Quantum Computing', 'Gene Editing', 'Artificial Intelligence', 'Climate Tech', 'Bioelectronics'].map((t) => (
               <button
                 key={t}
-                onClick={() => router.push(`/feed?topic=${encodeURIComponent(t)}`)}
+                onClick={() => {
+                  if (t === 'CSULB' || t === 'UOP') {
+                    router.push(`/feed?search=${encodeURIComponent(t)}`);
+                  } else {
+                    router.push(`/feed?topic=${encodeURIComponent(t)}`);
+                  }
+                }}
                 className="px-3.5 py-1.5 text-xs font-medium text-zinc-500 dark:text-zinc-550 hover:text-zinc-900 dark:hover:text-zinc-200 border border-zinc-200 dark:border-zinc-800 hover:border-zinc-300 dark:hover:border-zinc-700 rounded-xl transition-all cursor-pointer"
               >
                 {t}
@@ -94,7 +100,7 @@ export default function LandingPage() {
       <section className="border-y border-zinc-100 dark:border-zinc-800/50 py-8">
         <div className="max-w-5xl mx-auto px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-white">4</div>
+            <div className="text-2xl font-bold text-zinc-900 dark:text-white">6+</div>
             <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider">Universities</div>
           </div>
           <div>
