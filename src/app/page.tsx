@@ -10,9 +10,9 @@ export default function LandingPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredItems, setFeaturedItems] = useState<any[]>([]);
   const [stats, setStats] = useState<{ universityCount: number; researchCount: number; topicCount: number }>({
-    universityCount: 6,
-    researchCount: 20,
-    topicCount: 5
+    universityCount: 0,
+    researchCount: 0,
+    topicCount: 0
   });
   const [loading, setLoading] = useState(true);
 

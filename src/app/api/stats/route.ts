@@ -10,9 +10,9 @@ export async function GET() {
     const topicCount = await prisma.topic.count();
 
     return NextResponse.json({
-      universityCount: Math.max(universityCount, 6),
-      researchCount: Math.max(researchCount, 20),
-      topicCount: Math.max(topicCount, 8)
+      universityCount: universityCount,
+      researchCount: researchCount,
+      topicCount: topicCount
     });
   } catch (err: any) {
     console.error('Stats API error:', err);
