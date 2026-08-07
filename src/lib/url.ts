@@ -14,32 +14,7 @@ export function ensureAbsoluteUrl(url?: string | null, universityInfo?: string |
   if (
     lower.includes('labs.university.edu') ||
     lower.includes('faculty.edu') ||
-    lower.includes('university.edu') ||
-    lower.includes('example.com') ||
-    lower.includes('utaustin.edu') ||
-    lower.includes('universityofflorida.edu') ||
-    lower.includes('dartmouthcollege.edu') ||
-    lower.includes('johnshopkinsuniversity.edu') ||
-    lower.includes('bostonuniversity.edu') ||
-    lower.includes('universityofpennsylvania.edu') ||
-    lower.includes('universityofmaryland.edu') ||
-    lower.includes('ohiostateuniversity.edu') ||
-    lower.includes('universityofwashington.edu') ||
-    lower.includes('universityofchicago.edu') ||
-    lower.includes('vanderbiltuniversity.edu') ||
-    lower.includes('brownuniversity.edu') ||
-    lower.includes('dukeuniversity.edu') ||
-    lower.includes('purdueuniversity.edu') ||
-    lower.includes('cornelluniversity.edu') ||
-    lower.includes('columbiauniversity.edu') ||
-    lower.includes('princetonuniversity.edu') ||
-    lower.includes('mit-quantum-topological-qubit') ||
-    lower.includes('quantum-coherence-materials') ||
-    lower.includes('bao-group/flexible-organic-electronics') ||
-    lower.includes('s41587-026-crispr') ||
-    lower.includes('nsf-climate-resilient-grid') ||
-    lower.includes('5g-wireless-signal-intelligence') ||
-    lower.includes('agricultural-iot-sensors')
+    lower.includes('example.com')
   ) {
     return resolveRealUniversityUrl(universityInfo || trimmed, domainHint);
   }

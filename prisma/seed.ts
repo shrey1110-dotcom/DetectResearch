@@ -214,7 +214,7 @@ async function main() {
       departmentId: csulbCECS.id,
       professorId: shabnamSodagari.id,
       publicationDate: new Date('2026-06-18'),
-      sourceUrl: 'https://www.csulb.edu/college-of-engineering/computer-engineering-computer-science',
+      sourceUrl: 'https://www.csulb.edu/college-of-engineering/research/5g-deep-learning',
       sourceType: 'publication',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -253,7 +253,7 @@ async function main() {
       departmentId: csulbMAE.id,
       professorId: christopherDares.id,
       publicationDate: new Date('2026-05-28'),
-      sourceUrl: 'https://www.csulb.edu/college-of-engineering',
+      sourceUrl: 'https://www.csulb.edu/college-of-engineering/research/autonomous-drone-swarms',
       sourceType: 'lab page',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -292,7 +292,7 @@ async function main() {
       departmentId: uopCS.id,
       professorId: michaelCanniff.id,
       publicationDate: new Date('2026-07-02'),
-      sourceUrl: 'https://www.pacific.edu/engineering-and-computer-science',
+      sourceUrl: 'https://www.pacific.edu/engineering/research/iot-water-quality',
       sourceType: 'grant',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -331,7 +331,7 @@ async function main() {
       departmentId: uopBio.id,
       professorId: elizabethBasha.id,
       publicationDate: new Date('2026-06-25'),
-      sourceUrl: 'https://www.pacific.edu/engineering-and-computer-science/academics/computer-science',
+      sourceUrl: 'https://www.pacific.edu/engineering/research/microfluidic-pathogen-detection',
       sourceType: 'university news',
       isVerified: true,
       verifiedByUserId: adminUser.id,
@@ -349,6 +349,46 @@ async function main() {
 
   await prisma.professorResearchLink.create({
     data: { professorId: elizabethBasha.id, researchItemId: itemUOP2.id }
+  });
+
+  // 11. Seed UOP Link 3
+  const linkUOP3 = await prisma.researchLink.create({
+    data: {
+      url: 'https://www.pacific.edu/engineering/research/neuromorphic-computing-prosthetics',
+      status: 'PROCESSED',
+      addedByUserId: adminUser.id
+    }
+  });
+
+  const itemUOP3 = await prisma.researchItem.create({
+    data: {
+      researchLinkId: linkUOP3.id,
+      title: 'Neuromorphic Computing Architectures for Real-Time Control of Robotic Prosthetics',
+      summary: 'UOP researchers are developing novel neuromorphic chip architectures designed to mimic the brain\'s neural pathways, enabling ultra-low latency control and sensory feedback for advanced robotic prosthetic limbs.',
+      significance: 'Provides amputees with natural, instantaneous limb control and restores sensory perception without the high computational overhead of traditional processors.',
+      universityId: uop.id,
+      departmentId: uopCS.id,
+      professorId: michaelCanniff.id,
+      publicationDate: new Date('2026-08-01'),
+      sourceUrl: 'https://www.pacific.edu/engineering/research/neuromorphic-computing-prosthetics',
+      sourceType: 'lab page',
+      isVerified: true,
+      verifiedByUserId: adminUser.id,
+      confidenceScores: { title: 1.0, professor: 1.0, university: 1.0, department: 1.0, summary: 1.0, email: 1.0 },
+      missingInfoFlags: []
+    }
+  });
+
+  await prisma.researchItemTopic.createMany({
+    data: [
+      { researchItemId: itemUOP3.id, topicId: topicMap['Neuroengineering'].id },
+      { researchItemId: itemUOP3.id, topicId: topicMap['Robotics'].id },
+      { researchItemId: itemUOP3.id, topicId: topicMap['Artificial Intelligence'].id }
+    ]
+  });
+
+  await prisma.professorResearchLink.create({
+    data: { professorId: michaelCanniff.id, researchItemId: itemUOP3.id }
   });
 
   // MIT
