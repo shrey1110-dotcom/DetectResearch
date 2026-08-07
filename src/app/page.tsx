@@ -9,15 +9,29 @@ export default function LandingPage() {
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState('');
   const [featuredItems, setFeaturedItems] = useState<any[]>([]);
+  const [stats, setStats] = useState<{ universityCount: number; researchCount: number; topicCount: number }>({
+    universityCount: 6,
+    researchCount: 20,
+    topicCount: 5
+  });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const res = await fetch('/api/research');
-        if (res.ok) {
-          const data = await res.json();
+        const [researchRes, statsRes] = await Promise.all([
+          fetch('/api/research'),
+          fetch('/api/stats')
+        ]);
+
+        if (researchRes.ok) {
+          const data = await researchRes.json();
           setFeaturedItems(data.items.slice(0, 6));
+        }
+
+        if (statsRes.ok) {
+          const statsData = await statsRes.json();
+          setStats(statsData);
         }
       } catch (err) {
         console.error(err);
@@ -100,11 +114,11 @@ export default function LandingPage() {
       <section className="border-y border-zinc-100 dark:border-zinc-800/50 py-8">
         <div className="max-w-5xl mx-auto px-6 md:px-12 grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
           <div>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-white">6+</div>
+            <div className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.universityCount}+</div>
             <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider">Universities</div>
           </div>
           <div>
-            <div className="text-2xl font-bold text-zinc-900 dark:text-white">5+</div>
+            <div className="text-2xl font-bold text-zinc-900 dark:text-white">{stats.topicCount}+</div>
             <div className="text-xs font-medium text-zinc-500 dark:text-zinc-400 mt-1 uppercase tracking-wider">Research Areas</div>
           </div>
           <div>

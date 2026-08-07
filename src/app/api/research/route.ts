@@ -67,14 +67,25 @@ export async function GET(req: Request) {
     // Apply keyword search in database for maximum speed and scaling
     if (search) {
       const q = search.trim();
-      where.OR = [
-        { title: { contains: q, mode: 'insensitive' } },
-        { summary: { contains: q, mode: 'insensitive' } },
-        { significance: { contains: q, mode: 'insensitive' } },
-        { professor: { name: { contains: q, mode: 'insensitive' } } },
-        { university: { name: { contains: q, mode: 'insensitive' } } },
-        { department: { name: { contains: q, mode: 'insensitive' } } }
-      ];
+      const lowerQ = q.toLowerCase();
+
+      const searchTerms: string[] = [q];
+      if (lowerQ === 'uop' || lowerQ === 'pacific') {
+        searchTerms.push('Pacific', 'University of the Pacific', 'pacific.edu', 'UOP');
+      }
+      if (lowerQ === 'csulb' || lowerQ === 'long beach') {
+        searchTerms.push('CSULB', 'Long Beach', 'csulb.edu');
+      }
+
+      where.OR = searchTerms.flatMap(term => [
+        { title: { contains: term, mode: 'insensitive' } },
+        { summary: { contains: term, mode: 'insensitive' } },
+        { significance: { contains: term, mode: 'insensitive' } },
+        { professor: { name: { contains: term, mode: 'insensitive' } } },
+        { university: { name: { contains: term, mode: 'insensitive' } } },
+        { university: { domain: { contains: term, mode: 'insensitive' } } },
+        { department: { name: { contains: term, mode: 'insensitive' } } }
+      ]);
     }
 
     // Fetch total count for pagination metadata
