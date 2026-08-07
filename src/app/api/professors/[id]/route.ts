@@ -76,7 +76,8 @@ export async function GET(
 
     const sanitizedResearchItems = uniqueResearchItems.map(item => ({
       ...item,
-      sourceUrl: ensureAbsoluteUrl(item.sourceUrl, item.university?.name, item.university?.domain)
+      sourceUrl: ensureAbsoluteUrl(item.sourceUrl, item.university?.name, item.university?.domain),
+      topic: item.topics && item.topics.length > 0 ? item.topics[0].topic.name : 'Research'
     }));
 
     return NextResponse.json({
